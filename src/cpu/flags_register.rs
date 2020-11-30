@@ -1,8 +1,8 @@
 pub struct FlagsRegister {
-    zero : bool,
-    subtract : bool,
-    half_carry : bool,
-    carry : bool,
+    pub zero : bool,
+    pub subtract : bool,
+    pub half_carry : bool,
+    pub carry : bool,
 }
 
 const ZERO_FLAG_BIT_POSITION : u8 = 7;

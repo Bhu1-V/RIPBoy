@@ -538,6 +538,8 @@ impl CPU {
 
 #[cfg(test)]
 mod tests{
+    use crate::gpu::{GPU, VRAM::VRAM_SIZE};
+
     use super::*;
 
     #[test]
@@ -562,7 +564,13 @@ mod tests{
             registers : r,
             bus : MemoryBus {
                 memory: mem,
+                gpu : GPU{
+                    vram : [0;VRAM_SIZE],
+                    tile_set : [ crate::gpu::empty_tile() ; 384],
+                },
             },
+            sp : 0,
+            is_halted : false,
             pc : 0,
         };
         let b: u8 = c.registers.get_hl() as u8;

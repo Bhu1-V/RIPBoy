@@ -40,6 +40,8 @@ impl Instruction {
 
     fn from_byte_not_prefixed(byte: u8) -> Option<Instruction> {
         match byte {
+
+            // - DATA PROCESSING INST. //
             0x03 => Some(Instruction::INC(IncDecTarget::BC)),
             0x13 => Some(Instruction::INC(IncDecTarget::DE)),
             0x23 => Some(Instruction::INC(IncDecTarget::HL)),
@@ -48,6 +50,11 @@ impl Instruction {
             0x14 => Some(Instruction::INC(IncDecTarget::D)),
             0x24 => Some(Instruction::INC(IncDecTarget::H)),
             0x34 => Some(Instruction::INC(IncDecTarget::HL2)),
+            0x0C => Some(Instruction::INC(IncDecTarget::C)),
+            0x1C => Some(Instruction::INC(IncDecTarget::E)),
+            0x2C => Some(Instruction::INC(IncDecTarget::L)),
+            0x3C => Some(Instruction::INC(IncDecTarget::A)),
+
 
             0x05 => Some(Instruction::DEC(IncDecTarget::B)),
             0x15 => Some(Instruction::DEC(IncDecTarget::D)),
@@ -57,6 +64,10 @@ impl Instruction {
             0x1B => Some(Instruction::DEC(IncDecTarget::DE)),
             0x2B => Some(Instruction::DEC(IncDecTarget::HL)),
             0x3B => Some(Instruction::DEC(IncDecTarget::SP)),
+            0x0D => Some(Instruction::DEC(IncDecTarget::C)),
+            0x1D => Some(Instruction::DEC(IncDecTarget::E)),
+            0x2D => Some(Instruction::DEC(IncDecTarget::L)),
+            0x3D => Some(Instruction::DEC(IncDecTarget::A)),
 
             0x80 => Some(Instruction::ADD(ArthemeticTarget::B)),
             0x81 => Some(Instruction::ADD(ArthemeticTarget::C)),
@@ -67,6 +78,10 @@ impl Instruction {
             0x86 => Some(Instruction::ADD(ArthemeticTarget::HL)),
             0x87 => Some(Instruction::ADD(ArthemeticTarget::A)),
             0xC6 => Some(Instruction::ADD(ArthemeticTarget::D8)),
+            0x09 => Some(Instruction::ADD(ArthemeticTarget::HLBC)),
+            0x19 => Some(Instruction::ADD(ArthemeticTarget::HLDE)),
+            0x29 => Some(Instruction::ADD(ArthemeticTarget::HLHL)),
+            0x39 => Some(Instruction::ADD(ArthemeticTarget::HLSP)),
 
             0x90 => Some(Instruction::SUB(ArthemeticTarget::B)),
             0x91 => Some(Instruction::SUB(ArthemeticTarget::C)),

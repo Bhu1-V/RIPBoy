@@ -20,6 +20,9 @@ pub enum Instruction {
     NOP,
     HALT,
     STOP,
+    DI,
+    CB,
+    EI,
 }
 
 impl Instruction {
@@ -153,12 +156,29 @@ impl Instruction {
             0xBF => Some(Instruction::CP(ArthemeticTarget::A)),
             0xFE => Some(Instruction::CP(ArthemeticTarget::D8)),
             
+            // Jump Instr.
             0xC2 => Some(Instruction::JP(JumpTest::NotZero)),
             0xD2 => Some(Instruction::JP(JumpTest::NotCarry)),
             0xC3 => Some(Instruction::JP(JumpTest::A16)),
             0xCA => Some(Instruction::JP(JumpTest::Zero)),
             0xDA => Some(Instruction::JP(JumpTest::Carry)),
             0xE9 => Some(Instruction::JP(JumpTest::HL)),
+
+            0xC1 => Some(Instruction::RET(JumpTest::NotZero)),
+            0xD1 => Some(Instruction::RET(JumpTest::NotCarry)),
+            0xC8 => Some(Instruction::RET(JumpTest::Zero)),
+            0xD8 => Some(Instruction::RET(JumpTest::Carry)),
+            0xC9 => Some(Instruction::RET(JumpTest::Always)),
+            0xD9 => Some(Instruction::RET(JumpTest::I)),
+
+            // MISC INST.
+            0x00 => Some(Instruction::NOP),
+            0x10 => Some(Instruction::STOP),
+            0x76 => Some(Instruction::HALT),
+            0xF3 => Some(Instruction::DI),
+            0xCB => Some(Instruction::CB),
+            0xFB => Some(Instruction::EI),
+
             _ => None,
         }
     }

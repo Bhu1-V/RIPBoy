@@ -433,6 +433,7 @@ impl CPU {
                     JumpTest::HL => {
                         return self.jump(true, true);
                     }
+                    _ => panic!("implement adiitional jumptest"),
                 };
                 self.jump(jump_condition, false)
             }

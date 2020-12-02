@@ -659,6 +659,7 @@ impl CPU {
             _ => panic!("Support More Languages."),
         }
     }
+    // TO- DO : if error check whether all sp adds are correctly done.
 
     fn call(&mut self, should_jump: bool) -> u16 {
         let next_pc = self.pc.wrapping_add(3);

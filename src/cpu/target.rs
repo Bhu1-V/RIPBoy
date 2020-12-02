@@ -1,5 +1,5 @@
 pub enum ArthemeticTarget {
-    A, B, C, D, E, H, L, D8, HL
+    A, B, C, D, E, H, L, D8, HL,HLBC,HLDE,HLHL,HLSP,SP
 }
 
 pub enum ArthemeticTarget16Bit{

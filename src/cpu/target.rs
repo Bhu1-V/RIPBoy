@@ -11,7 +11,9 @@ pub enum JumpTest {
     NotCarry,
     Carry,
     A16,
-    HL
+    HL,
+    Always,
+    I,
 }
 pub enum StackTarget{
     BC,HL,DE,AF

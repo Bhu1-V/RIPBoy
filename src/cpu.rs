@@ -153,6 +153,8 @@ impl CPU {
                         
                         value = self.bus.read_byte(self.pc);
                     }
+
+                    _ => panic!("Reached Unreachable code"),
                 }
                 let new_value = self.sub(self.registers.a,value, false);
                 self.registers.a = new_value;
@@ -195,6 +197,7 @@ impl CPU {
                         
                         value = self.bus.read_byte(self.pc);
                     }
+                    _ => panic!("Reached Unreachable code"),
                 }
                 let new_value = self.add(self.registers.a, value, true);
                 self.registers.a = new_value;
@@ -239,6 +242,7 @@ impl CPU {
                         
                         value = self.bus.read_byte(self.pc);
                     }
+                    _ => panic!("Reached Unreachable code"),
                 }
                 let new_value = self.sub(self.registers.a,value, true);
                 self.registers.a = new_value;
@@ -283,6 +287,7 @@ impl CPU {
                         
                         value = self.bus.read_byte(self.pc);
                     }
+                    _ => panic!("Reached Unreachable code"),
                 }
                 self.sub(self.registers.a,value, false);
                 self.m += 1;
@@ -323,6 +328,7 @@ impl CPU {
                         
                         value = self.bus.read_byte(self.pc);
                     }
+                    _ => panic!("Reached Unreachable code"),
                 }
                 let new_value = self.and(value);
                 self.registers.a = new_value;
@@ -365,6 +371,7 @@ impl CPU {
                         
                         value = self.bus.read_byte(self.pc);
                     }
+                    _ => panic!("Reached Unreachable code"),
                 }
                 let new_value = self.or(value, false);
                 self.m += 1;
@@ -407,6 +414,7 @@ impl CPU {
                         
                         value = self.bus.read_byte(self.pc);
                     }
+                    _ => panic!("Reached Unreachable code"),
                 }
                 let new_value = self.or(value, true);
                 self.m += 1;

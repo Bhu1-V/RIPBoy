@@ -56,6 +56,9 @@ impl Instruction {
         match byte {
 
             // - DATA PROCESSING INST. //
+            // 37 + 63 Inst.= 100
+
+            // checked INC
             0x03 => Some(Instruction::INC(IncDecTarget::BC)),
             0x13 => Some(Instruction::INC(IncDecTarget::DE)),
             0x23 => Some(Instruction::INC(IncDecTarget::HL)),
@@ -69,7 +72,7 @@ impl Instruction {
             0x2C => Some(Instruction::INC(IncDecTarget::L)),
             0x3C => Some(Instruction::INC(IncDecTarget::A)),
 
-
+            // checked DEC
             0x05 => Some(Instruction::DEC(IncDecTarget::B)),
             0x15 => Some(Instruction::DEC(IncDecTarget::D)),
             0x25 => Some(Instruction::DEC(IncDecTarget::H)),
@@ -83,6 +86,7 @@ impl Instruction {
             0x2D => Some(Instruction::DEC(IncDecTarget::L)),
             0x3D => Some(Instruction::DEC(IncDecTarget::A)),
 
+            // checked ADD
             0x80 => Some(Instruction::ADD(ArthemeticTarget::B)),
             0x81 => Some(Instruction::ADD(ArthemeticTarget::C)),
             0x82 => Some(Instruction::ADD(ArthemeticTarget::D)),
@@ -91,12 +95,17 @@ impl Instruction {
             0x85 => Some(Instruction::ADD(ArthemeticTarget::L)),
             0x86 => Some(Instruction::ADD(ArthemeticTarget::HL)),
             0x87 => Some(Instruction::ADD(ArthemeticTarget::A)),
+
             0xC6 => Some(Instruction::ADD(ArthemeticTarget::D8)),
+
             0x09 => Some(Instruction::ADD(ArthemeticTarget::HLBC)),
             0x19 => Some(Instruction::ADD(ArthemeticTarget::HLDE)),
             0x29 => Some(Instruction::ADD(ArthemeticTarget::HLHL)),
             0x39 => Some(Instruction::ADD(ArthemeticTarget::HLSP)),
+            0xE8 => Some(Instruction::ADD(ArthemeticTarget::SP)),
 
+            // 7 * 9 = 63
+            // checked SUB
             0x90 => Some(Instruction::SUB(ArthemeticTarget::B)),
             0x91 => Some(Instruction::SUB(ArthemeticTarget::C)),
             0x92 => Some(Instruction::SUB(ArthemeticTarget::D)),
@@ -107,6 +116,7 @@ impl Instruction {
             0x97 => Some(Instruction::SUB(ArthemeticTarget::A)),
             0xD6 => Some(Instruction::SUB(ArthemeticTarget::D8)),
 
+            // checked AND
             0xA0 => Some(Instruction::AND(ArthemeticTarget::B)),
             0xA1 => Some(Instruction::AND(ArthemeticTarget::C)),
             0xA2 => Some(Instruction::AND(ArthemeticTarget::D)),
@@ -117,6 +127,7 @@ impl Instruction {
             0xA7 => Some(Instruction::AND(ArthemeticTarget::A)),
             0xE6 => Some(Instruction::AND(ArthemeticTarget::D8)),
 
+            // checked OR
             0xB0 => Some(Instruction::OR(ArthemeticTarget::B)),
             0xB1 => Some(Instruction::OR(ArthemeticTarget::C)),
             0xB2 => Some(Instruction::OR(ArthemeticTarget::D)),
@@ -127,6 +138,7 @@ impl Instruction {
             0xB7 => Some(Instruction::OR(ArthemeticTarget::A)),
             0xF6 => Some(Instruction::OR(ArthemeticTarget::D8)),
             
+            //checked ADC
             0x88 => Some(Instruction::ADC(ArthemeticTarget::B)),
             0x89 => Some(Instruction::ADC(ArthemeticTarget::C)),
             0x8A => Some(Instruction::ADC(ArthemeticTarget::D)),
@@ -137,6 +149,7 @@ impl Instruction {
             0x8F => Some(Instruction::ADC(ArthemeticTarget::A)),
             0xCE => Some(Instruction::ADC(ArthemeticTarget::D8)),
             
+            // checked SBC
             0x98 => Some(Instruction::SBC(ArthemeticTarget::B)),
             0x99 => Some(Instruction::SBC(ArthemeticTarget::C)),
             0x9A => Some(Instruction::SBC(ArthemeticTarget::D)),
@@ -147,6 +160,7 @@ impl Instruction {
             0x9F => Some(Instruction::SBC(ArthemeticTarget::A)),
             0xDE => Some(Instruction::SBC(ArthemeticTarget::D8)),
 
+            // Checked XOR
             0xA8 => Some(Instruction::XOR(ArthemeticTarget::B)),
             0xA9 => Some(Instruction::XOR(ArthemeticTarget::C)),
             0xAA => Some(Instruction::XOR(ArthemeticTarget::D)),
@@ -157,6 +171,7 @@ impl Instruction {
             0xAF => Some(Instruction::XOR(ArthemeticTarget::A)),
             0xEE => Some(Instruction::XOR(ArthemeticTarget::D8)),
 
+            //Checked CP
             0xB8 => Some(Instruction::CP(ArthemeticTarget::B)),
             0xB9 => Some(Instruction::CP(ArthemeticTarget::C)),
             0xBA => Some(Instruction::CP(ArthemeticTarget::D)),
@@ -167,7 +182,7 @@ impl Instruction {
             0xBF => Some(Instruction::CP(ArthemeticTarget::A)),
             0xFE => Some(Instruction::CP(ArthemeticTarget::D8)),
             
-            // Jump Instr.
+            // Jump Instr.  12 Inst.
             0xC2 => Some(Instruction::JP(JumpTest::NotZero)),
             0xD2 => Some(Instruction::JP(JumpTest::NotCarry)),
             0xC3 => Some(Instruction::JP(JumpTest::A16)),
@@ -182,7 +197,9 @@ impl Instruction {
             0xC9 => Some(Instruction::RET(JumpTest::Always)),
             0xD9 => Some(Instruction::RET(JumpTest::I)),
 
-            // Loading Instructions.
+            // Loading Instructions. 15 + 8*6 = 63
+
+            // checked LD BASIC TYPE
             0x40 => Some(Instruction::LD(LoadType::Byte(LoadByteTarget::B,LoadByteSource::B))),
             0x41 => Some(Instruction::LD(LoadType::Byte(LoadByteTarget::B,LoadByteSource::C))),
             0x42 => Some(Instruction::LD(LoadType::Byte(LoadByteTarget::B,LoadByteSource::D))),
@@ -255,7 +272,7 @@ impl Instruction {
             0x7E => Some(Instruction::LD(LoadType::Byte(LoadByteTarget::A,LoadByteSource::HL))),
             0x7F => Some(Instruction::LD(LoadType::Byte(LoadByteTarget::A,LoadByteSource::A))),
 
-            //SPECIAL LOAD INST.
+            //SPECIAL LOAD INST.  22 INSTRUCTIONS
 
             0x02 => Some(Instruction::LD(LoadType::Byte(LoadByteTarget::BCV,LoadByteSource::A))),
             0x12 => Some(Instruction::LD(LoadType::Byte(LoadByteTarget::DEV,LoadByteSource::A))),
@@ -287,7 +304,7 @@ impl Instruction {
             0xFA => Some(Instruction::LD(LoadType::Byte(LoadByteTarget::A,LoadByteSource::OWord))),
 
             
-            // MISC INST.
+            // MISC INST. [304 - 291 = 13]
             0x00 => Some(Instruction::NOP),
             0x10 => Some(Instruction::STOP),
             0x76 => Some(Instruction::HALT),

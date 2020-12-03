@@ -74,6 +74,13 @@ pub enum LoadByteSource {
 }
 pub enum LoadType {
     Byte(LoadByteTarget, LoadByteSource),
+    Word(LoadWordTarget , LoadWordSource),
+}
+pub enum LoadWordTarget{
+    BC, DE ,HL ,SP , A16 ,
+}
+pub enum LoadWordSource{
+    D16 , SPr8 , HL, SP
 }
 pub enum IncDecTarget {
     BC,

@@ -35,4 +35,5 @@ impl MemoryBus {
             _ => self.memory[address as usize] = value,
         }
     }
+
 }

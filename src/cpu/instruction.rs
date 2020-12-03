@@ -13,10 +13,12 @@ pub enum Instruction {
     CP(ArthemeticTarget),
     JP(JumpTest),
     LD(LoadType),
+    LD2(LoadType),
     PUSH(StackTarget),
     POP(StackTarget),
     CALL(JumpTest),
     RET(JumpTest),
+    JR(JumpTest),
 
     NOP,
     HALT,
@@ -182,6 +184,7 @@ impl Instruction {
             0xFE => Some(Instruction::CP(ArthemeticTarget::D8)),
 
             // Jump Instr.  12 Inst.
+            // checked JP
             0xC2 => Some(Instruction::JP(JumpTest::NotZero)),
             0xD2 => Some(Instruction::JP(JumpTest::NotCarry)),
             0xC3 => Some(Instruction::JP(JumpTest::A16)),
@@ -189,8 +192,9 @@ impl Instruction {
             0xDA => Some(Instruction::JP(JumpTest::Carry)),
             0xE9 => Some(Instruction::JP(JumpTest::HL)),
 
-            0xC1 => Some(Instruction::RET(JumpTest::NotZero)),
-            0xD1 => Some(Instruction::RET(JumpTest::NotCarry)),
+            // Checked RET
+            0xC0 => Some(Instruction::RET(JumpTest::NotZero)),
+            0xD0 => Some(Instruction::RET(JumpTest::NotCarry)),
             0xC8 => Some(Instruction::RET(JumpTest::Zero)),
             0xD8 => Some(Instruction::RET(JumpTest::Carry)),
             0xC9 => Some(Instruction::RET(JumpTest::Always)),
@@ -571,6 +575,45 @@ impl Instruction {
             0x07 => Some(Instruction::RLCA),
             0x2F => Some(Instruction::CPL),
             0x27 => Some(Instruction::DAA),
+
+            // 16-bit load INSTRUCTIONS
+
+            0xC1 => Some(Instruction::POP(StackTarget::BC)),
+            0xD1 => Some(Instruction::POP(StackTarget::DE)),
+            0xE1 => Some(Instruction::POP(StackTarget::HL)),
+            0xF1 => Some(Instruction::POP(StackTarget::AF)),
+
+            0xC5 => Some(Instruction::PUSH(StackTarget::BC)),
+            0xD5 => Some(Instruction::PUSH(StackTarget::DE)),
+            0xE5 => Some(Instruction::PUSH(StackTarget::HL)),
+            0xF5 => Some(Instruction::PUSH(StackTarget::AF)),
+
+            
+
+            // more call instructions
+            0xC4 => Some(Instruction::CALL(JumpTest::NotZero)),
+            0xD4 => Some(Instruction::CALL(JumpTest::NotCarry)),
+            0xCC => Some(Instruction::CALL(JumpTest::Zero)),
+            0xDC => Some(Instruction::CALL(JumpTest::Carry)),
+            0xCD => Some(Instruction::CALL(JumpTest::Always)),
+
+            // LAST 20 Instr.
+
+            0x20 => Some(Instruction::JR(JumpTest::NotZero)),
+            0x30 => Some(Instruction::JR(JumpTest::NotCarry)),
+            0x28 => Some(Instruction::JR(JumpTest::Zero)),
+            0x38 => Some(Instruction::JR(JumpTest::Carry)),
+            0x18 => Some(Instruction::JR(JumpTest::Always)),
+
+                // more 16 bit load instructions
+            0x01 => Some(Instruction::LD2(LoadType::Word(LoadWordTarget::BC,LoadWordSource::D16))),
+            0x11 => Some(Instruction::LD2(LoadType::Word(LoadWordTarget::DE,LoadWordSource::D16))),
+            0x21 => Some(Instruction::LD2(LoadType::Word(LoadWordTarget::HL,LoadWordSource::D16))),
+            0x31 => Some(Instruction::LD2(LoadType::Word(LoadWordTarget::SP,LoadWordSource::D16))),
+            0x08 => Some(Instruction::LD2(LoadType::Word(LoadWordTarget::A16,LoadWordSource::SP))),
+
+            0xF8 => Some(Instruction::LD2(LoadType::Word(LoadWordTarget::HL,LoadWordSource::SPr8))),
+            0xF9 => Some(Instruction::LD2(LoadType::Word(LoadWordTarget::SP,LoadWordSource::HL))),
 
             _ => None,
         }

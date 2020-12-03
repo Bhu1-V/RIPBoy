@@ -60,8 +60,7 @@ impl CPU {
                     }
                     ArthemeticTarget::D8 => {
                         // TO-DO : Implement correctly
-                        self.m = 1;
-                        
+                        self.m = 1;  
                         value = self.read_next_byte();
                     }
                     ArthemeticTarget::HLBC => {
@@ -101,13 +100,13 @@ impl CPU {
                         return self.pc.wrapping_add(1);
                     }
                     ArthemeticTarget::SP => {
-                        // ITS ERROR CHECK THIS.
+                        // If ERROR CHECK THIS.
+                        let b = self.read_next_byte() as u16;
                         let new_val = self.add_16bit(
                             self.sp,
-                            self.bus.read_byte(self.pc) as u16
+                            b
                         );
                         self.sp = new_val;
-                        self.pc = self.pc.wrapping_add(1);
                         self.m = 4;
                         return self.pc.wrapping_add(1);
                     }
@@ -610,7 +609,8 @@ impl CPU {
                         }
                         LoadByteSource::OByte => {
                             let u :u16 = 0xFF00;
-                            let r = self.bus.read_byte(u.overflowing_add(self.pc).0);
+                            let b = self.read_next_byte() as u16;
+                            let r = self.bus.read_byte(u.overflowing_add(b).0);
                             r
                         }
                         // TO - DO test this.
@@ -653,10 +653,7 @@ impl CPU {
 
                         _ => panic!("add more"),
                     }
-                    match source {
-                        LoadByteSource::D8 => self.pc.wrapping_add(2),
-                        _ => self.pc.wrapping_add(1),
-                    }
+                    self.pc.wrapping_add(1)
                 }
                 _ => panic!("Load ERROR"),
             },
@@ -706,6 +703,91 @@ impl CPU {
                 self.pc
             }
 
+            Instruction::CCF => {
+                self.registers.f.toggle_carry();
+                self.pc.wrapping_add(1)
+            }
+            Instruction::SCF => {
+                self.registers.f.set_carry_true();
+                self.pc.wrapping_add(1)
+            }
+            Instruction::RRA => {
+                let b = self.registers.f.get_carry();
+                if (self.registers.a & 1) == 1 {
+                    self.registers.f.set_carry(true);
+                }else{
+                    self.registers.f.set_carry(false);
+                }
+                self.registers.a >>= 1;
+                if b {self.registers.a |= 0x80;};
+                self.pc.wrapping_add(1)
+            }
+
+            Instruction::RRCA => {
+                if (self.registers.a & 1) == 1 {
+                    self.registers.f.set_carry(true);
+                    self.registers.a >>= 1;
+                    self.registers.a |= 0x80;
+                }else{
+                    self.registers.f.set_carry(false);
+                    self.registers.a >>= 1;
+                }
+                self.pc.wrapping_add(1)
+            }
+
+            Instruction::RLA => {
+                let b = self.registers.f.get_carry();
+                if (self.registers.a & 0x80) == 1 {
+                    self.registers.f.set_carry(true);
+                }else{
+                    self.registers.f.set_carry(false);
+                }
+                self.registers.a <<= 1;
+                if b {self.registers.a |= 1};
+                self.pc.wrapping_add(1)
+            }
+
+            
+            Instruction::RLCA => {
+                let b = self.registers.f.get_carry();
+                if (self.registers.a & 0x80) == 1 {
+                    self.registers.f.set_carry(true);
+                    self.registers.a <<= 1;
+                    self.registers.a |= 1;
+                }else{
+                    self.registers.f.set_carry(false);
+                    self.registers.a <<= 1;
+                }
+                self.pc.wrapping_add(1)
+            }
+
+            Instruction::CPL => {
+                self.registers.a = !(self.registers.a);
+                self.registers.f.half_carry = true;
+                self.registers.f.subtract = true;
+                self.pc.wrapping_add(1)
+            }
+
+            // todo : CHECK THIS LATER
+            Instruction::DAA => {
+                let a = self.registers.a;
+                let mut _f = self.registers.f.con();
+                if ((_f & 0x20) != 0) || ((self.registers.a & 15) > 9)
+                { 
+                    self.registers.a += 6;
+                }
+                _f &= 0xEF;
+                self.registers.f = FlagsRegister::from(_f);
+                if (_f & 0x20) != 0 || ( a > 0x99) {
+                    self.registers.a += 0x60;
+                    _f |= 0x10;
+                    self.registers.f = FlagsRegister::from(_f);
+                }
+                self.m = 1;
+
+                self.pc.wrapping_add(1)
+            }
+
             _ => panic!("Support More Languages."),
         }
     }
@@ -729,9 +811,9 @@ impl CPU {
         }
     }
 
-    fn read_next_byte(&self) -> u8 {
-        self.bus.read_byte(self.pc + 1);
+    fn read_next_byte(&mut self) -> u8 {
         self.pc = self.pc.wrapping_add(1);
+        self.bus.read_byte(self.pc + 1)
     }
 
     fn read_next_word(&self) -> u16 {

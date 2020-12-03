@@ -19,10 +19,10 @@ pub enum StackTarget{
     BC,HL,DE,AF
 }
 pub enum LoadByteTarget {
-    A, B, C, D, E, H, L, HLI
+    A, B, C, D, E, H, L, HL,HLI,HLD,OC,OWord,OByte,BCV,DEV,
 }
 pub enum LoadByteSource {
-    A, B, C, D, E, H, L, D8, HLI
+    A, B, C, D, E, H, L, D8,HL, HLI,OC,OWord,OByte,BCV,DEV,HLD,
 }
 pub enum LoadType{
     Byte(LoadByteTarget,LoadByteSource),

@@ -55,37 +55,46 @@ impl CPU {
                     }
                     ArthemeticTarget::HL => {
                         self.m = 1;
-
+                        
                         value = self.bus.read_byte(self.registers.get_hl());
                     }
                     ArthemeticTarget::D8 => {
                         // TO-DO : Implement correctly
-                        self.m = 1;
+                        self.m = 1;  
                         value = self.read_next_byte();
                     }
                     ArthemeticTarget::HLBC => {
-                        let new_val =
-                            self.add_16bit(self.registers.get_hl(), self.registers.get_bc());
+                        let new_val = self.add_16bit(
+                            self.registers.get_hl(),
+                            self.registers.get_bc()
+                        );
                         self.registers.set_hl(new_val);
                         self.m = 3;
                         return self.pc.wrapping_add(1);
                     }
                     ArthemeticTarget::HLDE => {
-                        let new_val =
-                            self.add_16bit(self.registers.get_hl(), self.registers.get_de());
+                        let new_val = self.add_16bit(
+                            self.registers.get_hl(),
+                            self.registers.get_de()
+                        );
                         self.registers.set_hl(new_val);
                         self.m = 3;
                         return self.pc.wrapping_add(1);
                     }
                     ArthemeticTarget::HLHL => {
-                        let new_val =
-                            self.add_16bit(self.registers.get_hl(), self.registers.get_hl());
+                        let new_val = self.add_16bit(
+                            self.registers.get_hl(),
+                            self.registers.get_hl()
+                        );
                         self.registers.set_hl(new_val);
                         self.m = 3;
                         return self.pc.wrapping_add(1);
                     }
                     ArthemeticTarget::HLSP => {
-                        let new_val = self.add_16bit(self.registers.get_hl(), self.sp);
+                        let new_val = self.add_16bit(
+                            self.registers.get_hl(),
+                            self.sp,
+                        );
                         self.registers.set_hl(new_val);
                         self.m = 3;
                         return self.pc.wrapping_add(1);
@@ -93,7 +102,10 @@ impl CPU {
                     ArthemeticTarget::SP => {
                         // If ERROR CHECK THIS.
                         let b = self.read_next_byte() as u16;
-                        let new_val = self.add_16bit(self.sp, b);
+                        let new_val = self.add_16bit(
+                            self.sp,
+                            b
+                        );
                         self.sp = new_val;
                         self.m = 4;
                         return self.pc.wrapping_add(1);
@@ -102,7 +114,7 @@ impl CPU {
                 let new_value = self.add(self.registers.a, value, false);
                 self.registers.a = new_value;
                 self.m += 1;
-
+                
                 return self.pc.wrapping_add(1);
             }
 
@@ -131,22 +143,22 @@ impl CPU {
                     }
                     ArthemeticTarget::HL => {
                         self.m = 1;
-
+                        
                         value = self.bus.read_byte(self.registers.get_hl());
                     }
                     ArthemeticTarget::D8 => {
                         // TO-DO : Implement correctly
                         self.m = 1;
-
+                        
                         value = self.read_next_byte();
                     }
 
                     _ => panic!("Reached Unreachable code"),
                 }
-                let new_value = self.sub(self.registers.a, value, false);
+                let new_value = self.sub(self.registers.a,value, false);
                 self.registers.a = new_value;
                 self.m += 1;
-
+                
                 return self.pc.wrapping_add(1);
             }
 
@@ -175,13 +187,13 @@ impl CPU {
                     }
                     ArthemeticTarget::HL => {
                         self.m = 1;
-
+                        
                         value = self.bus.read_byte(self.registers.get_hl());
                     }
                     ArthemeticTarget::D8 => {
                         // TO-DO : Implement correctly
                         self.m = 1;
-
+                        
                         value = self.read_next_byte();
                     }
                     _ => panic!("Reached Unreachable code"),
@@ -191,7 +203,7 @@ impl CPU {
                 let new_value = self.add(self.registers.a, value, false);
                 self.registers.a = new_value;
                 self.m += 1;
-
+                
                 return self.pc.wrapping_add(1);
             }
 
@@ -220,22 +232,22 @@ impl CPU {
                     }
                     ArthemeticTarget::HL => {
                         self.m = 1;
-
+                        
                         value = self.bus.read_byte(self.registers.get_hl());
                     }
                     ArthemeticTarget::D8 => {
                         // TO-DO : Implement correctly
                         self.m = 1;
-
+                        
                         value = self.read_next_byte();
                     }
                     _ => panic!("Reached Unreachable code"),
                 }
-                let new_value = self.sub(self.registers.a, value, true);
+                let new_value = self.sub(self.registers.a,value, true);
                 self.registers.a = new_value;
-                let new_value = self.sub(self.registers.a, value, false);
+                let new_value = self.sub(self.registers.a,value, false);
                 self.m += 1;
-
+                
                 self.registers.a = new_value;
                 return self.pc.wrapping_add(1);
             }
@@ -265,20 +277,20 @@ impl CPU {
                     }
                     ArthemeticTarget::HL => {
                         self.m = 1;
-
+                        
                         value = self.bus.read_byte(self.registers.get_hl());
                     }
                     ArthemeticTarget::D8 => {
                         // TO-DO : Implement correctly
                         self.m = 1;
-
+                        
                         value = self.read_next_byte();
                     }
                     _ => panic!("Reached Unreachable code"),
                 }
-                self.sub(self.registers.a, value, false);
+                self.sub(self.registers.a,value, false);
                 self.m += 1;
-
+                
                 return self.pc.wrapping_add(1);
             }
 
@@ -312,7 +324,7 @@ impl CPU {
                     ArthemeticTarget::D8 => {
                         // TO-DO : Implement correctly
                         self.m = 1;
-
+                        
                         value = self.read_next_byte();
                     }
                     _ => panic!("Reached Unreachable code"),
@@ -320,7 +332,7 @@ impl CPU {
                 let new_value = self.and(value);
                 self.registers.a = new_value;
                 self.m += 1;
-
+                
                 return self.pc.wrapping_add(1);
             }
 
@@ -349,20 +361,20 @@ impl CPU {
                     }
                     ArthemeticTarget::HL => {
                         self.m = 1;
-
+                        
                         value = self.bus.read_byte(self.registers.get_hl());
                     }
                     ArthemeticTarget::D8 => {
                         // TO-DO : Implement correctly
                         self.m = 1;
-
+                        
                         value = self.read_next_byte();
                     }
                     _ => panic!("Reached Unreachable code"),
                 }
                 let new_value = self.or(value, false);
                 self.m += 1;
-
+                
                 self.registers.a = new_value;
                 return self.pc.wrapping_add(1);
             }
@@ -392,20 +404,20 @@ impl CPU {
                     }
                     ArthemeticTarget::HL => {
                         self.m = 1;
-
+                        
                         value = self.bus.read_byte(self.registers.get_hl());
                     }
                     ArthemeticTarget::D8 => {
                         // TO-DO : Implement correctly
                         self.m = 1;
-
+                        
                         value = self.read_next_byte();
                     }
                     _ => panic!("Reached Unreachable code"),
                 }
                 let new_value = self.or(value, true);
                 self.m += 1;
-
+                
                 self.registers.a = new_value;
                 return self.pc.wrapping_add(1);
             }
@@ -450,37 +462,37 @@ impl CPU {
                     }
                     IncDecTarget::HL2 => {
                         self.m = 2;
-
+                        
                         value = self.bus.read_byte(self.registers.get_hl());
-                        value = self.add(value, 1, false);
+                        value = self.add(value,1,false);
                         self.bus.write_bytes(self.registers.get_hl(), value)
                     }
                     IncDecTarget::BC => {
                         // TO-DO : Implement correctly
-                        let (val, over_flowed) = self.registers.c.overflowing_add(1);
+                        let (val , over_flowed) = self.registers.c.overflowing_add(1);
                         self.registers.c = val;
                         if over_flowed {
-                            let (val, _over_flowed) = self.registers.b.overflowing_add(1);
+                            let (val , _over_flowed) = self.registers.b.overflowing_add(1);
                             self.registers.b = val;
                         }
                     }
 
                     IncDecTarget::DE => {
                         // TO-DO : Implement correctly
-                        let (val, over_flowed) = self.registers.e.overflowing_add(1);
+                        let (val , over_flowed) = self.registers.e.overflowing_add(1);
                         self.registers.e = val;
                         if over_flowed {
-                            let (val, _over_flowed) = self.registers.d.overflowing_add(1);
+                            let (val , _over_flowed) = self.registers.d.overflowing_add(1);
                             self.registers.d = val;
                         }
                     }
 
                     IncDecTarget::HL => {
                         // TO-DO : Implement correctly
-                        let (val, over_flowed) = self.registers.l.overflowing_add(1);
+                        let (val , over_flowed) = self.registers.l.overflowing_add(1);
                         self.registers.l = val;
                         if over_flowed {
-                            let (val, _over_flowed) = self.registers.h.overflowing_add(1);
+                            let (val , _over_flowed) = self.registers.h.overflowing_add(1);
                             self.registers.h = val;
                         }
                     }
@@ -488,9 +500,10 @@ impl CPU {
                     IncDecTarget::SP => {
                         self.sp = self.sp.wrapping_add(1);
                     }
+
                 }
                 self.m += 1;
-
+                
                 return self.pc.wrapping_add(1);
             }
 
@@ -519,37 +532,37 @@ impl CPU {
                     }
                     IncDecTarget::HL2 => {
                         self.m = 2;
-
+                        
                         value = self.bus.read_byte(self.registers.get_hl());
-                        value = self.sub(value, 1, false);
+                        value = self.sub(value,1,false);
                         self.bus.write_bytes(self.registers.get_hl(), value)
                     }
                     IncDecTarget::BC => {
                         // TO-DO : Implement correctly
-                        let (val, over_flowed) = self.registers.c.overflowing_sub(1);
+                        let (val , over_flowed) = self.registers.c.overflowing_sub(1);
                         self.registers.c = val;
                         if over_flowed {
-                            let (val, _over_flowed) = self.registers.b.overflowing_sub(1);
+                            let (val , _over_flowed) = self.registers.b.overflowing_sub(1);
                             self.registers.b = val;
                         }
                     }
 
                     IncDecTarget::DE => {
                         // TO-DO : Implement correctly
-                        let (val, over_flowed) = self.registers.e.overflowing_sub(1);
+                        let (val , over_flowed) = self.registers.e.overflowing_sub(1);
                         self.registers.e = val;
                         if over_flowed {
-                            let (val, _over_flowed) = self.registers.d.overflowing_sub(1);
+                            let (val , _over_flowed) = self.registers.d.overflowing_sub(1);
                             self.registers.d = val;
                         }
                     }
 
                     IncDecTarget::HL => {
                         // TO-DO : Implement correctly
-                        let (val, over_flowed) = self.registers.l.overflowing_sub(1);
+                        let (val , over_flowed) = self.registers.l.overflowing_sub(1);
                         self.registers.l = val;
                         if over_flowed {
-                            let (val, _over_flowed) = self.registers.h.overflowing_sub(1);
+                            let (val , _over_flowed) = self.registers.h.overflowing_sub(1);
                             self.registers.h = val;
                         }
                     }
@@ -559,7 +572,7 @@ impl CPU {
                     }
                 }
                 self.m += 1;
-
+                
                 return self.pc.wrapping_add(1);
             }
 
@@ -579,25 +592,23 @@ impl CPU {
                         LoadByteSource::DEV => self.bus.read_byte(self.registers.get_de()),
                         LoadByteSource::HLI => {
                             let r = self.bus.read_byte(self.registers.get_hl());
-                            let n: u16 = self.registers.get_hl().wrapping_add(1);
+                            let n:u16 = self.registers.get_hl().wrapping_add(1);
                             self.registers.set_hl(n);
                             r
                         }
                         LoadByteSource::HLD => {
                             let r = self.bus.read_byte(self.registers.get_hl());
-                            let n: u16 = self.registers.get_hl().wrapping_sub(1);
+                            let n:u16 = self.registers.get_hl().wrapping_sub(1);
                             self.registers.set_hl(n);
                             r
                         }
                         LoadByteSource::OC => {
-                            let u: u16 = 0xFF00;
-                            let r = self
-                                .bus
-                                .read_byte(u.overflowing_add(self.registers.c as u16).0);
+                            let u :u16 = 0xFF00;
+                            let r = self.bus.read_byte(u.overflowing_add(self.registers.c as u16).0);
                             r
                         }
                         LoadByteSource::OByte => {
-                            let u: u16 = 0xFF00;
+                            let u :u16 = 0xFF00;
                             let b = self.read_next_byte() as u16;
                             let r = self.bus.read_byte(u.overflowing_add(b).0);
                             r
@@ -609,6 +620,7 @@ impl CPU {
                             r
                         }
                         _ => panic!("Load source error"),
+                        
                     };
                     // todo - add timing
                     match target {
@@ -619,7 +631,8 @@ impl CPU {
                         LoadByteTarget::E => self.registers.e = source_value,
                         LoadByteTarget::H => self.registers.h = source_value,
                         LoadByteTarget::L => self.registers.l = source_value,
-                        LoadByteTarget::HLI | LoadByteTarget::HL | LoadByteTarget::HLD => {
+                        LoadByteTarget::HLI | LoadByteTarget::HL |
+                        LoadByteTarget::HLD => {
                             self.bus.write_bytes(self.registers.get_hl(), source_value)
                         }
                         LoadByteTarget::BCV => {
@@ -628,16 +641,15 @@ impl CPU {
                         LoadByteTarget::DEV => {
                             self.bus.write_bytes(self.registers.get_de(), source_value)
                         }
-                        LoadByteTarget::OC => self
-                            .bus
-                            .write_bytes(0xFF00 + self.registers.c as u16, source_value),
-                        LoadByteTarget::OByte => self.bus.write_bytes(
-                            0xFF0 + (self.bus.read_byte(self.pc) as u16),
-                            source_value,
-                        ),
+                        LoadByteTarget::OC => {
+                            self.bus.write_bytes(0xFF00 + self.registers.c as u16, source_value)
+                        }
+                        LoadByteTarget::OByte => {
+                            self.bus.write_bytes(0xFF0 + (self.bus.read_byte(self.pc) as u16), source_value)
+                        }
                         // todo : test this
                         LoadByteTarget::OWord => {
-                            let w = self.read_next_word();
+                            let w =self.read_next_word();
                             self.bus.write_bytes(w, source_value)
                         }
 
@@ -705,13 +717,11 @@ impl CPU {
                 let b = self.registers.f.get_carry();
                 if (self.registers.a & 1) == 1 {
                     self.registers.f.set_carry(true);
-                } else {
+                }else{
                     self.registers.f.set_carry(false);
                 }
                 self.registers.a >>= 1;
-                if b {
-                    self.registers.a |= 0x80;
-                };
+                if b {self.registers.a |= 0x80;};
                 self.pc.wrapping_add(1)
             }
 
@@ -720,7 +730,7 @@ impl CPU {
                     self.registers.f.set_carry(true);
                     self.registers.a >>= 1;
                     self.registers.a |= 0x80;
-                } else {
+                }else{
                     self.registers.f.set_carry(false);
                     self.registers.a >>= 1;
                 }
@@ -731,23 +741,22 @@ impl CPU {
                 let b = self.registers.f.get_carry();
                 if (self.registers.a & 0x80) == 1 {
                     self.registers.f.set_carry(true);
-                } else {
+                }else{
                     self.registers.f.set_carry(false);
                 }
                 self.registers.a <<= 1;
-                if b {
-                    self.registers.a |= 1
-                };
+                if b {self.registers.a |= 1};
                 self.pc.wrapping_add(1)
             }
 
+            
             Instruction::RLCA => {
                 let b = self.registers.f.get_carry();
                 if (self.registers.a & 0x80) == 1 {
                     self.registers.f.set_carry(true);
                     self.registers.a <<= 1;
                     self.registers.a |= 1;
-                } else {
+                }else{
                     self.registers.f.set_carry(false);
                     self.registers.a <<= 1;
                 }
@@ -765,12 +774,13 @@ impl CPU {
             Instruction::DAA => {
                 let a = self.registers.a;
                 let mut _f = self.registers.f.con();
-                if ((_f & 0x20) != 0) || ((self.registers.a & 15) > 9) {
+                if ((_f & 0x20) != 0) || ((self.registers.a & 15) > 9)
+                { 
                     self.registers.a += 6;
                 }
                 _f &= 0xEF;
                 self.registers.f = FlagsRegister::from(_f);
-                if (_f & 0x20) != 0 || (a > 0x99) {
+                if (_f & 0x20) != 0 || ( a > 0x99) {
                     self.registers.a += 0x60;
                     _f |= 0x10;
                     self.registers.f = FlagsRegister::from(_f);
@@ -872,7 +882,7 @@ impl CPU {
         }
     }
 
-    fn add_16bit(&mut self, reg: u16, val: u16) -> u16 {
+    fn add_16bit(&mut self,reg: u16, val: u16) -> u16{
         let (new_val, over_flowed) = reg.overflowing_add(val);
         self.registers.f = FlagsRegister {
             zero: self.registers.f.zero,
@@ -883,7 +893,8 @@ impl CPU {
         new_val
     }
 
-    fn sub(&mut self, reg: u8, val: u8, carry: bool) -> u8 {
+
+    fn sub(&mut self,reg:u8, val: u8, carry: bool) -> u8 {
         let cy = if carry {
             if self.registers.f.carry == true {
                 1
@@ -901,7 +912,7 @@ impl CPU {
             half_carry: ((reg & 0xF).overflowing_sub(val & 0xF)).0 > 0xF,
         };
         if carry {
-            self.sub(reg, cy, false)
+            self.sub(reg,cy, false)
         } else {
             new_val
         }
@@ -977,7 +988,7 @@ mod tests {
         };
         let mem = [1; 0xFFFF];
         let mut c: CPU = CPU {
-            clock: Clock { m: 0 },
+            clock: Clock { m: 0},
             registers: r,
             bus: MemoryBus {
                 memory: mem,

@@ -1,30 +1,32 @@
 pub mod VRAM;
 pub mod tile_pixel_value;
 
-use VRAM::*;
 use tile_pixel_value::TilePixelValue;
+use VRAM::*;
 
-type Tile = [[TilePixelValue ; 8] ; 8];
+type Tile = [[TilePixelValue; 8]; 8];
 
 pub fn empty_tile() -> Tile {
     [[TilePixelValue::Zero; 8]; 8]
 }
 
-pub struct GPU{
-    pub vram : [u8 ; VRAM_SIZE],
-    pub tile_set : [Tile ; 384],
+pub struct GPU {
+    pub vram: [u8; VRAM_SIZE],
+    pub tile_set: [Tile; 384],
 }
 
 impl GPU {
-    pub fn read_vram(&self, address : usize) -> u8 {
+    pub fn read_vram(&self, address: usize) -> u8 {
         self.vram[address]
     }
 
-    pub fn write_vram(&mut self, index: usize , value: u8) {
+    pub fn write_vram(&mut self, index: usize, value: u8) {
         self.vram[index] = value;
         // If our index is greater than 0x1800, we're not writing to the tile set storage
         // so we can just return.
-        if index >= 0x1800 { return }
+        if index >= 0x1800 {
+            return;
+        }
 
         // Tiles rows are encoded in two bytes with the first byte always
         // on an even address. Bitwise ANDing the address with 0xffe

@@ -1051,11 +1051,17 @@ impl CPU {
     }
 
     fn reset_registers(&mut self){
-        self.registers.a = 0;   self.registers.f.reset();
-        self.registers.b = 0;   self.registers.c = 0;
-        self.registers.d = 0;   self.registers.e = 0;        
-        self.registers.h = 0;   self.registers.l = 0;
+        self.registers.a = self._rsv.a;
+        self.registers.b = self._rsv.b;
+        self.registers.c = self._rsv.c;
+        self.registers.d = self._rsv.d;
+        self.registers.e = self._rsv.e;
+        self.registers.f = FlagsRegister::from(self._rsv.f.con() as u8);
+        self.registers.h = self._rsv.h;
+        self.registers.l = self._rsv.l;
     }
+
+
 }
 
 #[cfg(test)]

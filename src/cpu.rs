@@ -62,7 +62,7 @@ impl CPU {
                         // TO-DO : Implement correctly
                         self.m = 1;
                         
-                        value = self.bus.read_byte(self.pc);
+                        value = self.read_next_byte();
                     }
                     ArthemeticTarget::HLBC => {
                         let new_val = self.add_16bit(
@@ -151,7 +151,7 @@ impl CPU {
                         // TO-DO : Implement correctly
                         self.m = 1;
                         
-                        value = self.bus.read_byte(self.pc);
+                        value = self.read_next_byte();
                     }
 
                     _ => panic!("Reached Unreachable code"),
@@ -195,7 +195,7 @@ impl CPU {
                         // TO-DO : Implement correctly
                         self.m = 1;
                         
-                        value = self.bus.read_byte(self.pc);
+                        value = self.read_next_byte();
                     }
                     _ => panic!("Reached Unreachable code"),
                 }
@@ -240,7 +240,7 @@ impl CPU {
                         // TO-DO : Implement correctly
                         self.m = 1;
                         
-                        value = self.bus.read_byte(self.pc);
+                        value = self.read_next_byte();
                     }
                     _ => panic!("Reached Unreachable code"),
                 }
@@ -285,7 +285,7 @@ impl CPU {
                         // TO-DO : Implement correctly
                         self.m = 1;
                         
-                        value = self.bus.read_byte(self.pc);
+                        value = self.read_next_byte();
                     }
                     _ => panic!("Reached Unreachable code"),
                 }
@@ -326,7 +326,7 @@ impl CPU {
                         // TO-DO : Implement correctly
                         self.m = 1;
                         
-                        value = self.bus.read_byte(self.pc);
+                        value = self.read_next_byte();
                     }
                     _ => panic!("Reached Unreachable code"),
                 }
@@ -369,7 +369,7 @@ impl CPU {
                         // TO-DO : Implement correctly
                         self.m = 1;
                         
-                        value = self.bus.read_byte(self.pc);
+                        value = self.read_next_byte();
                     }
                     _ => panic!("Reached Unreachable code"),
                 }
@@ -412,7 +412,7 @@ impl CPU {
                         // TO-DO : Implement correctly
                         self.m = 1;
                         
-                        value = self.bus.read_byte(self.pc);
+                        value = self.read_next_byte();
                     }
                     _ => panic!("Reached Unreachable code"),
                 }
@@ -588,9 +588,40 @@ impl CPU {
                         LoadByteSource::H => self.registers.h,
                         LoadByteSource::L => self.registers.l,
                         LoadByteSource::D8 => self.read_next_byte(),
-                        LoadByteSource::HLI => self.bus.read_byte(self.registers.get_hl()),
+                        LoadByteSource::HL => self.bus.read_byte(self.registers.get_hl()),
+                        LoadByteSource::BCV => self.bus.read_byte(self.registers.get_bc()),
+                        LoadByteSource::DEV => self.bus.read_byte(self.registers.get_de()),
+                        LoadByteSource::HLI => {
+                            let r = self.bus.read_byte(self.registers.get_hl());
+                            let n:u16 = self.registers.get_hl().wrapping_add(1);
+                            self.registers.set_hl(n);
+                            r
+                        }
+                        LoadByteSource::HLD => {
+                            let r = self.bus.read_byte(self.registers.get_hl());
+                            let n:u16 = self.registers.get_hl().wrapping_sub(1);
+                            self.registers.set_hl(n);
+                            r
+                        }
+                        LoadByteSource::OC => {
+                            let u :u16 = 0xFF00;
+                            let r = self.bus.read_byte(u.overflowing_add(self.registers.c as u16).0);
+                            r
+                        }
+                        LoadByteSource::OByte => {
+                            let u :u16 = 0xFF00;
+                            let r = self.bus.read_byte(u.overflowing_add(self.pc).0);
+                            r
+                        }
+                        // TO - DO test this.
+                        LoadByteSource::OWord => {
+                            let r = self.bus.read_byte(self.read_next_word());
+                            r
+                        }
                         _ => panic!("Load source error"),
+                        
                     };
+                    // todo - add timing
                     match target {
                         LoadByteTarget::A => self.registers.a = source_value,
                         LoadByteTarget::B => self.registers.b = source_value,
@@ -599,9 +630,28 @@ impl CPU {
                         LoadByteTarget::E => self.registers.e = source_value,
                         LoadByteTarget::H => self.registers.h = source_value,
                         LoadByteTarget::L => self.registers.l = source_value,
-                        LoadByteTarget::HLI => {
+                        LoadByteTarget::HLI | LoadByteTarget::HL |
+                        LoadByteTarget::HLD => {
                             self.bus.write_bytes(self.registers.get_hl(), source_value)
                         }
+                        LoadByteTarget::BCV => {
+                            self.bus.write_bytes(self.registers.get_bc(), source_value)
+                        }
+                        LoadByteTarget::DEV => {
+                            self.bus.write_bytes(self.registers.get_de(), source_value)
+                        }
+                        LoadByteTarget::OC => {
+                            self.bus.write_bytes(0xFF00 + self.registers.c as u16, source_value)
+                        }
+                        LoadByteTarget::OByte => {
+                            self.bus.write_bytes(0xFF0 + (self.bus.read_byte(self.pc) as u16), source_value)
+                        }
+                        // todo : test this
+                        LoadByteTarget::OWord => {
+                            self.bus.write_bytes(self.read_next_word(), source_value)
+                        }
+
+                        _ => panic!("add more"),
                     }
                     match source {
                         LoadByteSource::D8 => self.pc.wrapping_add(2),

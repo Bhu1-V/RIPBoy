@@ -1,4 +1,4 @@
 #[derive(Debug)]
 pub struct Clock {
-    pub m : u64,
+    pub m: u64,
 }

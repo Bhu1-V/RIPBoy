@@ -28,19 +28,19 @@ impl FlagsRegister {
             | (if self.carry { 1 } else { 0 }) << CARRY_FLAG_BIT_POSITION
     }
 
-    pub fn get_carry(&self) -> bool{
+    pub fn get_carry(&self) -> bool {
         self.carry
     }
 
-    pub fn toggle_carry(&mut self){
+    pub fn toggle_carry(&mut self) {
         self.carry = !self.carry;
     }
 
-    pub fn set_carry_true(&mut self){
+    pub fn set_carry_true(&mut self) {
         self.carry = true;
     }
 
-    pub fn set_carry(&mut self, b:bool){
+    pub fn set_carry(&mut self, b: bool) {
         self.carry = b;
     }
 }

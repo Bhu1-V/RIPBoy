@@ -1,9 +1,25 @@
 pub enum ArthemeticTarget {
-    A, B, C, D, E, H, L, D8, HL,HLBC,HLDE,HLHL,HLSP,SP
+    A,
+    B,
+    C,
+    D,
+    E,
+    H,
+    L,
+    D8,
+    HL,
+    HLBC,
+    HLDE,
+    HLHL,
+    HLSP,
+    SP,
 }
 
-pub enum ArthemeticTarget16Bit{
-    BC, DE, HL, SP,
+pub enum ArthemeticTarget16Bit {
+    BC,
+    DE,
+    HL,
+    SP,
 }
 pub enum JumpTest {
     NotZero,
@@ -15,17 +31,49 @@ pub enum JumpTest {
     Always,
     I,
 }
-pub enum StackTarget{
-    BC,HL,DE,AF
+pub enum StackTarget {
+    BC,
+    HL,
+    DE,
+    AF,
 }
 pub enum LoadByteTarget {
-    A, B, C, D, E, H, L, HL,HLI,HLD,OC,OWord,OByte,BCV,DEV,
+    A,
+    B,
+    C,
+    D,
+    E,
+    H,
+    L,
+    HL,
+    HLI,
+    HLD,
+    OC,
+    OWord,
+    OByte,
+    BCV,
+    DEV,
 }
 pub enum LoadByteSource {
-    A, B, C, D, E, H, L, D8,HL, HLI,OC,OWord,OByte,BCV,DEV,HLD,
+    A,
+    B,
+    C,
+    D,
+    E,
+    H,
+    L,
+    D8,
+    HL,
+    HLI,
+    OC,
+    OWord,
+    OByte,
+    BCV,
+    DEV,
+    HLD,
 }
-pub enum LoadType{
-    Byte(LoadByteTarget,LoadByteSource),
+pub enum LoadType {
+    Byte(LoadByteTarget, LoadByteSource),
 }
 pub enum IncDecTarget {
     BC,

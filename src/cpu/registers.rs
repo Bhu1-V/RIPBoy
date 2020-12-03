@@ -1,4 +1,4 @@
-use crate::cpu::flags_register::{self,FlagsRegister};
+use crate::cpu::flags_register::{self, FlagsRegister};
 #[derive(Debug)]
 pub struct Registers {
     pub a: u8,
@@ -38,12 +38,12 @@ impl Registers {
         self.l = (value & 0xFF) as u8;
     }
 
-    pub fn get_af(&mut self) ->u16 {
-        (self.a as u16) << 8 | ( self.f.con() as u16)
+    pub fn get_af(&mut self) -> u16 {
+        (self.a as u16) << 8 | (self.f.con() as u16)
     }
 
-    pub fn set_af(&mut self, value: u16){
-        self.a = (value >> 8) as u8 ;
+    pub fn set_af(&mut self, value: u16) {
+        self.a = (value >> 8) as u8;
         self.f = FlagsRegister::from((value & 0x00FF) as u8);
     }
 }

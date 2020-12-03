@@ -660,6 +660,48 @@ impl CPU {
                 _ => panic!("Load ERROR"),
             },
 
+            Instruction::LD2(load_type) => match load_type {
+                LoadType::Word(target, source) => {
+                    let source_value = match source {
+                        LoadWordSource::D16 => self.read_next_word(),
+                        LoadWordSource::SP => self.read_next_word(),
+                        LoadWordSource::SPr8 => {
+                            let b = self.read_next_byte() as u16;
+                            b.wrapping_add(self.sp)
+                        },
+                        LoadWordSource::HL => self.registers.get_hl(),
+                        
+                        // _ => panic!("Load source error"),
+                        
+                    };
+                    // todo - add timing
+                    match target {
+                        LoadWordTarget::BC => self.registers.set_bc(source_value),
+                        LoadWordTarget::DE => self.registers.set_de(source_value),
+                        LoadWordTarget::HL => self.registers.set_hl(source_value),
+                        LoadWordTarget::SP => self.sp = source_value,
+                        LoadWordTarget::A16 => {
+                            self.bus.write_bytes(source_value, (self.sp & 0xFF) as u8 );
+                        }
+                        // _ => panic!("add more"),
+                    }
+                    self.pc.wrapping_add(1)
+                }
+                _ => panic!("Load ERROR"),
+            },
+
+            Instruction::JR(test) => {
+                let jump_condition = match test {
+                    JumpTest::NotZero => !self.registers.f.zero,
+                    JumpTest::NotCarry => !self.registers.f.carry,
+                    JumpTest::Zero => self.registers.f.zero,
+                    JumpTest::Carry => self.registers.f.carry,
+                    JumpTest::Always => true,
+                    _ => panic!("implement adiitional jumptest"),
+                };
+                self.jump_8bit(jump_condition)
+            }
+
             Instruction::PUSH(target) => {
                 let value = match target {
                     StackTarget::BC => self.registers.get_bc(),
@@ -693,6 +735,14 @@ impl CPU {
             Instruction::RET(test) => {
                 let jump_condition = match test {
                     JumpTest::NotZero => !self.registers.f.zero,
+                    JumpTest::NotCarry => !self.registers.f.carry,
+                    JumpTest::Zero => self.registers.f.zero,
+                    JumpTest::Carry => self.registers.f.carry,
+                    JumpTest::Always => true,
+                    JumpTest::I => {
+                        self.reset_registers();
+                        true
+                    }
                     _ => panic!("TODO: support more conditions"),
                 };
                 self.return_(jump_condition)
@@ -945,6 +995,17 @@ impl CPU {
         new_val
     }
 
+    fn jump_8bit(&mut self , should_jump: bool ) -> u16{
+        if should_jump {
+            let b = self.read_next_byte() as i8;
+            self.m = 3;
+            return self.pc.wrapping_add(b as u16);
+        }else{
+            self.m = 2;
+            return self.pc.wrapping_add(2)
+        }
+    }
+
     fn jump(&self, should_jump: bool, exception: bool) -> u16 {
         if should_jump & !(exception) {
             // Gameboy is little endian so read pc + 2 as most significant bit
@@ -960,6 +1021,13 @@ impl CPU {
             // 3 bytes wide (1 byte for tag and 2 bytes for jump address)
             self.pc.wrapping_add(3)
         }
+    }
+
+    fn reset_registers(&mut self){
+        self.registers.a = 0;   self.registers.f.reset();
+        self.registers.b = 0;   self.registers.c = 0;
+        self.registers.d = 0;   self.registers.e = 0;        
+        self.registers.h = 0;   self.registers.l = 0;
     }
 }
 

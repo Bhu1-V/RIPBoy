@@ -17,12 +17,23 @@ pub enum Instruction {
     POP(StackTarget),
     CALL(JumpTest),
     RET(JumpTest),
+
     NOP,
     HALT,
     STOP,
+
     DI,
     CB,
     EI,
+    SCF,
+    
+    CCF,
+    RRA,
+    RRCA,
+    RLA,
+    RLCA,
+    CPL,
+    DAA,
 }
 
 impl Instruction {
@@ -283,6 +294,16 @@ impl Instruction {
             0xF3 => Some(Instruction::DI),
             0xCB => Some(Instruction::CB),
             0xFB => Some(Instruction::EI),
+            0x3F => Some(Instruction::CCF),
+            0x37 => Some(Instruction::SCF),
+            0x1F => Some(Instruction::RRA),
+            0x17 => Some(Instruction::RLA),
+            0x0F => Some(Instruction::RRCA),
+            0x07 => Some(Instruction::RLCA),
+            0x2F => Some(Instruction::CPL),
+            0x27 => Some(Instruction::DAA),
+
+
 
           _ => None,
         }

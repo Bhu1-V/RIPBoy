@@ -32,6 +32,13 @@ impl FlagsRegister {
         self.carry
     }
 
+    pub fn reset(&mut self) {
+        self.zero = false;
+        self.carry = false;
+        self.half_carry = false;
+        self.subtract = false;
+    }
+    
     pub fn toggle_carry(&mut self) {
         self.carry = !self.carry;
     }

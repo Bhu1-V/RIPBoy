@@ -16,6 +16,7 @@ pub mod target;
 pub struct CPU {
     clock: Clock,
     registers: Registers,
+    _rsv : Registers,
     bus: MemoryBus,
     pc: u16,
     sp: u16,
@@ -702,6 +703,25 @@ impl CPU {
                 self.jump_8bit(jump_condition)
             }
 
+            Instruction::RST(target) => {
+                self.rsv();
+                self.m = 3;
+                self.sp = self.sp.wrapping_sub(2);
+                self.bus.write_bytes(self.sp, (self.pc & 0xFF) as u8);
+                self.bus.write_bytes(self.sp + 1 , (self.pc >> 8)as u8);         
+                match target {
+                    RSTTarget::H00 => 0x00 as u16,
+                    RSTTarget::H08 => 0x08 as u16,
+                    RSTTarget::H10 => 0x10 as u16,
+                    RSTTarget::H18 => 0x18 as u16,
+                    RSTTarget::H20 => 0x20 as u16,
+                    RSTTarget::H28 => 0x28 as u16,
+                    RSTTarget::H30 => 0x30 as u16,
+                    RSTTarget::H38 => 0x38 as u16,
+                    _ => panic!("Implement"),
+                }
+            }
+
             Instruction::PUSH(target) => {
                 let value = match target {
                     StackTarget::BC => self.registers.get_bc(),
@@ -844,6 +864,13 @@ impl CPU {
         }
     }
     // TO- DO : if error check whether all sp adds are correctly done.
+    fn rsv(&mut self) {
+        self._rsv.a = self.registers.a; self._rsv.b = self.registers.b;
+        self._rsv.c = self.registers.c; self._rsv.d = self.registers.d;
+        self._rsv.e = self.registers.e;
+        self._rsv.f = FlagsRegister::from(self.registers.f.con());
+        self._rsv.h = self.registers.h; self._rsv.l = self.registers.l;
+    }
 
     fn call(&mut self, should_jump: bool) -> u16 {
         let next_pc = self.pc.wrapping_add(3);
@@ -1058,6 +1085,7 @@ mod tests {
         let mut c: CPU = CPU {
             clock: Clock { m: 0},
             registers: r,
+            _rsv : Registers::new(),
             bus: MemoryBus {
                 memory: mem,
                 gpu: GPU {

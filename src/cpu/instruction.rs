@@ -36,6 +36,8 @@ pub enum Instruction {
     RLCA,
     CPL,
     DAA,
+
+    RST(RSTTarget),
 }
 
 impl Instruction {
@@ -614,6 +616,18 @@ impl Instruction {
 
             0xF8 => Some(Instruction::LD2(LoadType::Word(LoadWordTarget::HL,LoadWordSource::SPr8))),
             0xF9 => Some(Instruction::LD2(LoadType::Word(LoadWordTarget::SP,LoadWordSource::HL))),
+
+            // RST Instructions
+            0xC7 => Some(Instruction::RST(RSTTarget::H00)),
+            0xD7 => Some(Instruction::RST(RSTTarget::H10)),
+            0xE7 => Some(Instruction::RST(RSTTarget::H20)),
+            0xF7 => Some(Instruction::RST(RSTTarget::H30)),
+
+            0xCF => Some(Instruction::RST(RSTTarget::H08)),
+            0xDF => Some(Instruction::RST(RSTTarget::H18)),
+            0xEF => Some(Instruction::RST(RSTTarget::H28)),
+            0xFF => Some(Instruction::RST(RSTTarget::H38)),
+
 
             _ => None,
         }

@@ -730,7 +730,8 @@ impl CPU {
     }
 
     fn read_next_byte(&self) -> u8 {
-        self.bus.read_byte(self.pc + 1)
+        self.bus.read_byte(self.pc + 1);
+        self.pc = self.pc.wrapping_add(1);
     }
 
     fn read_next_word(&self) -> u16 {

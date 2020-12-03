@@ -82,6 +82,9 @@ pub enum LoadWordTarget{
 pub enum LoadWordSource{
     D16 , SPr8 , HL, SP
 }
+pub enum RSTTarget{
+    H00, H10, H20, H30 ,H08 ,H18 ,H28 ,H38,
+}
 pub enum IncDecTarget {
     BC,
     DE,

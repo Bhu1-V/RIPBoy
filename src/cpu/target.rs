@@ -85,6 +85,9 @@ pub enum LoadWordSource{
 pub enum RSTTarget{
     H00, H10, H20, H30 ,H08 ,H18 ,H28 ,H38,
 }
+pub enum PrefixTarget{
+    B,C,D,E,H,L,HLV,A,
+}
 pub enum IncDecTarget {
     BC,
     DE,
@@ -108,4 +111,14 @@ pub enum RLCTarget {
     E,
     H,
     HL,
+}
+
+pub enum BitManipulationType{
+    Bit(TargetBit,SourceRegister),
+}
+pub enum TargetBit{
+    B0 , B1 , B2 , B3 , B4 , B5 , B6 , B7 ,
+}
+pub enum SourceRegister{
+    A,B,C,D,E,H,L,HLV,
 }

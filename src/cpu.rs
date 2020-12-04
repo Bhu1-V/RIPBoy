@@ -1383,10 +1383,10 @@ impl CPU {
                 self.pc.wrapping_add(1)
             }
 
-            Instruction::SRA(target) => {
+            Instruction::SRL(target) => {
                 match target {
                     PrefixTarget::B => {
-                        if self.registers.b & 0x80 == 1 {
+                        if self.registers.b & 0x1 == 1 {
                             self.registers.f.set_carry(true);
                         }else{
                             self.registers.f.set_carry(false);
@@ -1395,7 +1395,7 @@ impl CPU {
                         self.registers.f.zero = if self.registers.b == 0 { true } else { false };
                     }
                     PrefixTarget::C => {
-                        if self.registers.c & 0x80 == 1 {
+                        if self.registers.c & 0x1 == 1 {
                             self.registers.f.set_carry(true);
                         }else{
                             self.registers.f.set_carry(false);
@@ -1404,7 +1404,7 @@ impl CPU {
                         self.registers.f.zero = if self.registers.c == 0 { true } else { false };
                     }
                     PrefixTarget::D => {
-                        if self.registers.d & 0x80 == 1 {
+                        if self.registers.d & 0x1 == 1 {
                             self.registers.f.set_carry(true);
                         }else{
                             self.registers.f.set_carry(false);
@@ -1413,7 +1413,7 @@ impl CPU {
                         self.registers.f.zero = if self.registers.d == 0 { true } else { false };
                     }
                     PrefixTarget::E => {
-                        if self.registers.e & 0x80 == 1 {
+                        if self.registers.e & 0x1 == 1 {
                             self.registers.f.set_carry(true);
                         }else{
                             self.registers.f.set_carry(false);
@@ -1422,7 +1422,7 @@ impl CPU {
                         self.registers.f.zero = if self.registers.e == 0 { true } else { false };
                     }
                     PrefixTarget::H => {
-                        if self.registers.h & 0x80 == 1 {
+                        if self.registers.h & 0x1 == 1 {
                             self.registers.f.set_carry(true);
                         }else{
                             self.registers.f.set_carry(false);
@@ -1431,7 +1431,7 @@ impl CPU {
                         self.registers.f.zero = if self.registers.h == 0 { true } else { false };
                     }
                     PrefixTarget::L => {
-                        if self.registers.l & 0x80 == 1 {
+                        if self.registers.l & 0x1 == 1 {
                             self.registers.f.set_carry(true);
                         }else{
                             self.registers.f.set_carry(false);
@@ -1440,7 +1440,7 @@ impl CPU {
                         self.registers.f.zero = if self.registers.l == 0 { true } else { false };
                     }
                     PrefixTarget::A => {
-                        if self.registers.a & 0x80 == 1 {
+                        if self.registers.a & 0x1 == 1 {
                             self.registers.f.set_carry(true);
                         }else{
                             self.registers.f.set_carry(false);
@@ -1450,7 +1450,7 @@ impl CPU {
                     }
                     PrefixTarget::HLV => {
                         let mut value = self.bus.read_byte(self.registers.get_hl());
-                        if value & 0x80 == 1 {
+                        if value & 0x1 == 1 {
                             self.registers.f.set_carry(true);
                         }else{
                             self.registers.f.set_carry(false);
@@ -1519,6 +1519,8 @@ impl CPU {
                 }   
                 self.pc.wrapping_add(1)
             }
+
+
 
             _ => panic!("Support More Instructions."),
         }

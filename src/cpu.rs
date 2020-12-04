@@ -1302,6 +1302,168 @@ impl CPU {
                 self.pc.wrapping_add(1)
             }
 
+            Instruction::SLA(target) => {
+                match target {
+                    PrefixTarget::B => {
+                        if self.registers.b & 0x80 == 1 {
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                        self.registers.b = self.registers.b << 1;
+                        self.registers.f.zero = if self.registers.b == 0 { true } else { false };
+                    }
+                    PrefixTarget::C => {
+                        if self.registers.c & 0x80 == 1 {
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                        self.registers.c = self.registers.c << 1;
+                        self.registers.f.zero = if self.registers.c == 0 { true } else { false };
+                    }
+                    PrefixTarget::D => {
+                        if self.registers.d & 0x80 == 1 {
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                        self.registers.d = self.registers.d << 1;
+                        self.registers.f.zero = if self.registers.d == 0 { true } else { false };
+                    }
+                    PrefixTarget::E => {
+                        if self.registers.e & 0x80 == 1 {
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                        self.registers.e = self.registers.e << 1;
+                        self.registers.f.zero = if self.registers.e == 0 { true } else { false };
+                    }
+                    PrefixTarget::H => {
+                        if self.registers.h & 0x80 == 1 {
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                        self.registers.h = self.registers.h << 1;
+                        self.registers.f.zero = if self.registers.h == 0 { true } else { false };
+                    }
+                    PrefixTarget::L => {
+                        if self.registers.l & 0x80 == 1 {
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                        self.registers.l = self.registers.l << 1;
+                        self.registers.f.zero = if self.registers.l == 0 { true } else { false };
+                    }
+                    PrefixTarget::A => {
+                        if self.registers.a & 0x80 == 1 {
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                        self.registers.a = self.registers.a << 1;
+                        self.registers.f.zero = if self.registers.a == 0 { true } else { false };
+                    }
+                    PrefixTarget::HLV => {
+                        let mut value = self.bus.read_byte(self.registers.get_hl());
+                        if value & 0x80 == 1 {
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                        value = value << 1;
+                        self.bus.write_bytes(self.registers.get_hl(), value);
+                        self.registers.f.zero = if value == 0 { true } else { false };
+                    }
+                }
+
+                self.pc.wrapping_add(1)
+            }
+
+            Instruction::SRA(target) => {
+                match target {
+                    PrefixTarget::B => {
+                        if self.registers.b & 0x80 == 1 {
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                        self.registers.b = self.registers.b >> 1;
+                        self.registers.f.zero = if self.registers.b == 0 { true } else { false };
+                    }
+                    PrefixTarget::C => {
+                        if self.registers.c & 0x80 == 1 {
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                        self.registers.c = self.registers.c >> 1;
+                        self.registers.f.zero = if self.registers.c == 0 { true } else { false };
+                    }
+                    PrefixTarget::D => {
+                        if self.registers.d & 0x80 == 1 {
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                        self.registers.d = self.registers.d >> 1;
+                        self.registers.f.zero = if self.registers.d == 0 { true } else { false };
+                    }
+                    PrefixTarget::E => {
+                        if self.registers.e & 0x80 == 1 {
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                        self.registers.e = self.registers.e >> 1;
+                        self.registers.f.zero = if self.registers.e == 0 { true } else { false };
+                    }
+                    PrefixTarget::H => {
+                        if self.registers.h & 0x80 == 1 {
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                        self.registers.h = self.registers.h >> 1;
+                        self.registers.f.zero = if self.registers.h == 0 { true } else { false };
+                    }
+                    PrefixTarget::L => {
+                        if self.registers.l & 0x80 == 1 {
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                        self.registers.l = self.registers.l >> 1;
+                        self.registers.f.zero = if self.registers.l == 0 { true } else { false };
+                    }
+                    PrefixTarget::A => {
+                        if self.registers.a & 0x80 == 1 {
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                        self.registers.a = self.registers.a >> 1;
+                        self.registers.f.zero = if self.registers.a == 0 { true } else { false };
+                    }
+                    PrefixTarget::HLV => {
+                        let mut value = self.bus.read_byte(self.registers.get_hl());
+                        if value & 0x80 == 1 {
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                        value = value >> 1;
+                        self.bus.write_bytes(self.registers.get_hl(), value);
+                        self.registers.f.zero = if value == 0 { true } else { false };
+                    }
+                }
+
+                self.pc.wrapping_add(1)
+            }
+
             _ => panic!("Support More Instructions."),
         }
     }

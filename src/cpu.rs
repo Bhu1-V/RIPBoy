@@ -1585,6 +1585,33 @@ impl CPU {
                 self.pc.wrapping_add(1)
             }
 
+            Instruction::BIT(BitManipulationType::Bit(target_bit,source_register)) => {
+                let source = match source_register {
+                    SourceRegister::A => self.registers.a,
+                    SourceRegister::B => self.registers.b,
+                    SourceRegister::C => self.registers.c,
+                    SourceRegister::D => self.registers.d,
+                    SourceRegister::E => self.registers.e,
+                    SourceRegister::H => self.registers.h,
+                    SourceRegister::L => self.registers.l,
+                    SourceRegister::HLV => self.bus.read_byte(self.registers.get_hl()),
+                };
+                let mask = match target_bit {
+                    TargetBit::B0 => (!(source >> 0)) & 1,
+                    TargetBit::B1 => (!(source >> 1)) & 1,
+                    TargetBit::B2 => (!(source >> 2)) & 1,
+                    TargetBit::B3 => (!(source >> 3)) & 1,
+                    TargetBit::B4 => (!(source >> 4)) & 1,
+                    TargetBit::B5 => (!(source >> 5)) & 1,
+                    TargetBit::B6 => (!(source >> 6)) & 1,
+                    TargetBit::B7 => (!(source >> 7)) & 1,
+                };
+                self.registers.f.half_carry = true;
+                self.registers.f.subtract = false;
+                self.registers.f.zero = if mask == 1 {true} else {false};
+                self.pc.wrapping_add(1)
+            }
+
 
 
             _ => panic!("Support More Instructions."),

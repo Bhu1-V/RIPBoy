@@ -1464,6 +1464,62 @@ impl CPU {
                 self.pc.wrapping_add(1)
             }
 
+            Instruction::SWAP(target) => {
+                match target{
+                    PrefixTarget::A => {
+                        let upper = (self.registers.a & 0xF0) >> 4;
+                        let down = (self.registers.a & 0xF) << 4;
+                        self.registers.a = down | upper;
+                        self.registers.f.zero = if self.registers.a == 0 {true} else {false};
+                    }
+                    PrefixTarget::B => {
+                        let upper = (self.registers.b & 0xF0) >> 4;
+                        let down = (self.registers.b & 0xF) << 4;
+                        self.registers.b = down | upper;
+                        self.registers.f.zero = if self.registers.b == 0 {true} else {false};
+                    }
+                    PrefixTarget::C => {
+                        let upper = (self.registers.c & 0xF0) >> 4;
+                        let down = (self.registers.c & 0xF) << 4;
+                        self.registers.c = down | upper;
+                        self.registers.f.zero = if self.registers.c == 0 {true} else {false};
+                    }
+                    PrefixTarget::D => {
+                        let upper = (self.registers.d & 0xF0) >> 4;
+                        let down = (self.registers.d & 0xF) << 4;
+                        self.registers.d = down | upper;
+                        self.registers.f.zero = if self.registers.d == 0 {true} else {false};
+                    }
+                    PrefixTarget::E => {
+                        let upper = (self.registers.e & 0xF0) >> 4;
+                        let down = (self.registers.e & 0xF) << 4;
+                        self.registers.e = down | upper;
+                        self.registers.f.zero = if self.registers.e == 0 {true} else {false};
+                    }
+                    PrefixTarget::H => {
+                        let upper = (self.registers.h & 0xF0) >> 4;
+                        let down = (self.registers.h & 0xF) << 4;
+                        self.registers.h = down | upper;
+                        self.registers.f.zero = if self.registers.h == 0 {true} else {false};
+                    }
+                    PrefixTarget::L => {
+                        let upper = (self.registers.l & 0xF0) >> 4;
+                        let down = (self.registers.l & 0xF) << 4;
+                        self.registers.l = down | upper;
+                        self.registers.f.zero = if self.registers.l == 0 {true} else {false};
+                    }
+                    PrefixTarget::HLV => {
+                        let mut value = self.bus.read_byte(self.registers.get_hl());
+                        let upper = (value & 0xF0) >> 4;
+                        let down = (value & 0xF) << 4;
+                        value = down | upper;
+                        self.bus.write_bytes(self.registers.get_hl(), value);
+                        self.registers.f.zero = if value == 0 {true} else {false};
+                    }
+                }   
+                self.pc.wrapping_add(1)
+            }
+
             _ => panic!("Support More Instructions."),
         }
     }

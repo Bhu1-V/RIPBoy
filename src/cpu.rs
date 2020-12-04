@@ -860,7 +860,232 @@ impl CPU {
                 self.pc.wrapping_add(1)
             }
 
-            _ => panic!("Support More Languages."),
+            Instruction::RLC(target) => {
+                match target {
+                    PrefixTarget::B => {
+                        self.registers.b = self.registers.b.rotate_left(1);
+                        if self.registers.b == 0 {self.registers.f.reset()}
+                        if (self.registers.b & 0x80) == 1 {
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                    }
+                    PrefixTarget::C => {
+                        self.registers.c = self.registers.c.rotate_left(1);
+                        if self.registers.c == 0 {self.registers.f.reset()}
+                        if (self.registers.c & 0x80) == 1 {
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                    }
+                    PrefixTarget::D => {
+                        self.registers.d = self.registers.d.rotate_left(1);
+                        if self.registers.d == 0 {self.registers.f.reset()}
+                        if (self.registers.d & 0x80) == 1 {
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                    }
+                    PrefixTarget::E => {
+                        self.registers.e = self.registers.e.rotate_left(1);
+                        if self.registers.e == 0 {self.registers.f.reset()}
+                        if (self.registers.e & 0x80) == 1 {
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                    }
+                    PrefixTarget::H => {
+                        self.registers.h = self.registers.h.rotate_left(1);
+                        if self.registers.h == 0 {self.registers.f.reset()}
+                        if (self.registers.h & 0x80) == 1 {
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                    }
+                    PrefixTarget::L => {
+                        self.registers.l = self.registers.l.rotate_left(1);
+                        if self.registers.l == 0 {self.registers.f.reset()}
+                        if (self.registers.l & 0x80) == 1 {
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                    }
+                    PrefixTarget::A => {
+                        self.registers.a = self.registers.a.rotate_left(1);
+                        if self.registers.a == 0 {self.registers.f.reset()}
+                        if (self.registers.a & 0x80) == 1 {
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                    }
+                    PrefixTarget::HLV => {
+                        let mut value = self.bus.read_byte(self.registers.get_hl());
+                        value = value.rotate_left(1);
+                        self.bus.write_bytes(self.registers.get_hl(), value);
+                        if value == 0 {self.registers.f.reset()}
+                        if (value & 0x80) == 1 {
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                    }
+                }
+                self.pc.wrapping_add(1)
+            }
+
+            Instruction::RL(target) => {
+                match target {
+                    PrefixTarget::B => {
+                        let x = if self.registers.f.get_carry() {
+                            1u8
+                        }else{
+                            0
+                        };
+                        if self.registers.b & 0x80 == 1{
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                        self.registers.b = (self.registers.b << 1) + x;
+                        if self.registers.b == 0 {
+                            self.registers.f.zero = true;
+                        }
+                    }
+                    PrefixTarget::C => {
+                        let x = if self.registers.f.get_carry() {
+                            1u8
+                        }else{
+                            0
+                        };
+                        if self.registers.c & 0x80 == 1{
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                        self.registers.c = (self.registers.c << 1) + x;
+                        if self.registers.c == 0 {
+                            self.registers.f.zero = true;
+                        }
+                    }
+                    PrefixTarget::D => {
+                        let x = if self.registers.f.get_carry() {
+                            1u8
+                        }else{
+                            0
+                        };
+                        if self.registers.d & 0x80 == 1{
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                        self.registers.d = (self.registers.d << 1) + x;
+                        if self.registers.d == 0 {
+                            self.registers.f.zero = true;
+                        }
+                    }
+
+                    PrefixTarget::E => {
+                        let x = if self.registers.f.get_carry() {
+                            1u8
+                        }else{
+                            0
+                        };
+                        if self.registers.e & 0x80 == 1{
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                        self.registers.e = (self.registers.e << 1) + x;
+                        if self.registers.e == 0 {
+                            self.registers.f.zero = true;
+                        }
+                    }
+
+                    PrefixTarget::H => {
+                        let x = if self.registers.f.get_carry() {
+                            1u8
+                        }else{
+                            0
+                        };
+                        if self.registers.h & 0x80 == 1{
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                        self.registers.h = (self.registers.h << 1) + x;
+                        if self.registers.h == 0 {
+                            self.registers.f.zero = true;
+                        }
+                    }
+
+                    PrefixTarget::L => {
+                        let x = if self.registers.f.get_carry() {
+                            1u8
+                        }else{
+                            0
+                        };
+                        if self.registers.l & 0x80 == 1{
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                        self.registers.l = (self.registers.l << 1) + x;
+                        if self.registers.l == 0 {
+                            self.registers.f.zero = true;
+                        }
+                    }
+
+                    PrefixTarget::A => {
+                        let x = if self.registers.f.get_carry() {
+                            1u8
+                        }else{
+                            0
+                        };
+                        if self.registers.a & 0x80 == 1{
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                        self.registers.a = (self.registers.a << 1) + x;
+                        if self.registers.a == 0 {
+                            self.registers.f.zero = true;
+                        }
+                    }
+
+                    PrefixTarget::HLV => {
+                        let x = if self.registers.f.get_carry() {
+                            1u8
+                        }else{
+                            0
+                        };
+                        let mut value = self.bus.read_byte(self.registers.get_hl());
+                        if value & 0x80 == 1{
+                            self.registers.f.set_carry(true);
+                        }else{
+                            self.registers.f.set_carry(false);
+                        }
+                        value = (value << 1) + x;
+                        self.bus.write_bytes(self.registers.get_hl(), value);
+                        if value == 0 {
+                            self.registers.f.zero = true;
+                        }
+                    }
+                }
+                self.pc.wrapping_add(1)
+            }
+
+            Instruction::
+
+
+
+            _ => panic!("Support More Instructions."),
         }
     }
     // TO- DO : if error check whether all sp adds are correctly done.

@@ -1520,6 +1520,71 @@ impl CPU {
                 self.pc.wrapping_add(1)
             }
 
+            Instruction::SRA(target) => {
+                match target {
+                    PrefixTarget::A => {
+                        let x = self.registers.a & 0x80;
+                        let cy = self.registers.a & 0x1 == 1;
+                        self.registers.a = self.registers.a >> 1;
+                        self.registers.f.carry = cy;
+                        self.registers.a = self.registers.a | x;
+                    }
+                    PrefixTarget::B => {
+                        let x = self.registers.b & 0x80;
+                        let cy = self.registers.b & 0x1 == 1;
+                        self.registers.b = self.registers.b >> 1;
+                        self.registers.f.carry = cy;
+                        self.registers.b = self.registers.b | x;
+                    }
+                    PrefixTarget::C => {
+                        let x = self.registers.c & 0x80;
+                        let cy = self.registers.c & 0x1 == 1;
+                        self.registers.c = self.registers.c >> 1;
+                        self.registers.f.carry = cy;
+                        self.registers.c = self.registers.c | x;
+                    }
+                    PrefixTarget::D => {
+                        let x = self.registers.d & 0x80;
+                        let cy = self.registers.d & 0x1 == 1;
+                        self.registers.d = self.registers.d >> 1;
+                        self.registers.f.carry = cy;
+                        self.registers.d = self.registers.d | x;
+                    }
+                    PrefixTarget::E => {
+                        let x = self.registers.e & 0x80;
+                        let cy = self.registers.e & 0x1 == 1;
+                        self.registers.e = self.registers.e >> 1;
+                        self.registers.f.carry = cy;
+                        self.registers.e = self.registers.e | x;
+                    }
+                    PrefixTarget::H => {
+                        let x = self.registers.h & 0x80;
+                        let cy = self.registers.h & 0x1 == 1;
+                        self.registers.h = self.registers.h >> 1;
+                        self.registers.f.carry = cy;
+                        self.registers.h = self.registers.h | x;
+                    }
+                    PrefixTarget::L => {
+                        let x = self.registers.l & 0x80;
+                        let cy = self.registers.l & 0x1 == 1;
+                        self.registers.l = self.registers.l >> 1;
+                        self.registers.f.carry = cy;
+                        self.registers.l = self.registers.l | x;
+                    }
+                    PrefixTarget::HLV => {
+                        let mut value = self.bus.read_byte(self.registers.get_hl());
+                        let x = value & 0x80;
+                        let cy = value & 0x1 == 1;
+                        value = value >> 1;
+                        self.registers.f.carry = cy;
+                        value = value | x;
+                        self.bus.write_bytes(self.registers.get_hl(), value);
+                    }
+
+                }
+                self.pc.wrapping_add(1)
+            }
+
 
 
             _ => panic!("Support More Instructions."),

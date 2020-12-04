@@ -1646,6 +1646,40 @@ impl CPU {
                 self.pc.wrapping_add(1)
             }
 
+            Instruction::RES(BitManipulationType::Bit(target_bit,source_register)) => {
+                let mut source = match source_register {
+                    SourceRegister::A => self.registers.a,
+                    SourceRegister::B => self.registers.b,
+                    SourceRegister::C => self.registers.c,
+                    SourceRegister::D => self.registers.d,
+                    SourceRegister::E => self.registers.e,
+                    SourceRegister::H => self.registers.h,
+                    SourceRegister::L => self.registers.l,
+                    SourceRegister::HLV => self.bus.read_byte(self.registers.get_hl()),
+                };
+                source = match target_bit {
+                    TargetBit::B0 => source & 0b_1111_1110,
+                    TargetBit::B1 => source & 0b_1111_1101,
+                    TargetBit::B2 => source & 0b_1111_1011,
+                    TargetBit::B3 => source & 0b_1111_0111,
+                    TargetBit::B4 => source & 0b_1110_1111,
+                    TargetBit::B5 => source & 0b_1101_1111,
+                    TargetBit::B6 => source & 0b_1011_1111,
+                    TargetBit::B7 => source & 0b_0111_1111,
+                };
+                match source_register {
+                    SourceRegister::A => self.registers.a = source,
+                    SourceRegister::B => self.registers.b = source,
+                    SourceRegister::C => self.registers.c = source,
+                    SourceRegister::D => self.registers.d = source,
+                    SourceRegister::E => self.registers.e = source,
+                    SourceRegister::H => self.registers.h = source,
+                    SourceRegister::L => self.registers.l = source,
+                    SourceRegister::HLV => self.bus.write_bytes(self.registers.get_hl(),source),
+                };
+                self.pc.wrapping_add(1)
+            }
+
 
 
 

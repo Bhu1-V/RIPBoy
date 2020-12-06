@@ -6,8 +6,20 @@ use crate::gpu::*;
 
 use super::CPU;
 pub struct MemoryBus {
+
+    // bios flag
+    _inbios : bool,
+
+    // Memory Regions
+    _bios : [u8; BIOS_SIZE],
+    _rom  : [u8 ; ROM_0_SIZE],
+    _wram : [u8 ; WORKING_RAM_SIZE],
+    _eram : [u8 ; EXTERNAL_RAM_SIZE],
+    _zram : [u8 ; ZRAM_SIZE],
+
     pub memory: [u8; 0xFFFF],
     pub gpu: GPU,
+
 }
 
 impl fmt::Debug for MemoryBus {
@@ -19,15 +31,50 @@ impl fmt::Debug for MemoryBus {
 }
 
 impl MemoryBus {
-    pub fn read_byte(&self, address: u16) -> u8 {
+
+    pub fn read_byte(&mut self, address: u16) -> u8 {
 
         let address = address as usize;
+
         match address {
+
+            BIOS_BEGIN..=BIOS_END => {
+
+                if self._inbios {
+                    if address < 0x0100 {
+                        return self._bios[address - BIOS_BEGIN];
+                    }else if address == 0x0100 {
+                        self._inbios = false;
+                    }
+                }
+
+                return self._rom[address - ROM_0_BEGIN];
+            }
+
+            ROM_0_BEGIN..=ROM_0_END => {
+                return self._rom[address - ROM_0_BEGIN];
+            }
+
+            ROM_1_BEGIN..=ROM_1_END => {
+                return self._rom[ROM_0_SIZE + (address - ROM_1_BEGIN) ]
+            }
+
             VRAM_BEGIN..=VRAM_END => {
 
                 return self.gpu.read_vram(address - VRAM_BEGIN);
 
             }
+
+            EXTERNAL_RAM_BEGIN..=EXTERNAL_RAM_END => {
+                return self._eram[address - EXTERNAL_RAM_BEGIN];
+            }
+
+            WORKING_RAM_BEGIN..=WORKING_RAM_END => {
+                return self._wram[address - WORKING_RAM_BEGIN];
+            }
+
+            
+
             _ => self.memory[address as usize],
         }
 

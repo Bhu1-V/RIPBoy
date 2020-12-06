@@ -69,12 +69,19 @@ impl MemoryBus {
                 return self._eram[address - EXTERNAL_RAM_BEGIN];
             }
 
-            WORKING_RAM_BEGIN..=WORKING_RAM_END => {
+            WORKING_RAM_BEGIN..=WORKING_RAM_END | W_SHADOW_RAM_BEGIN..=W_SHADOW_RAM_END => {
                 return self._wram[address - WORKING_RAM_BEGIN];
             }
 
-            
+            SPRITE_RAM_BEGIN..=SPRITE_RAM_END => {
+                // HANDLE CORRECTLY.
+                return self.gpu.read_vram(address - VRAM_BEGIN);
+            }
 
+            ZRAM_BEGIN..=ZRAM_END => {
+                return self._zram[address - ZRAM_BEGIN];
+            }
+        
             _ => self.memory[address as usize],
         }
 

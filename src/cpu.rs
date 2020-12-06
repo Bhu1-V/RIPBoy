@@ -647,7 +647,8 @@ impl CPU {
                             self.bus.write_bytes(0xFF00 + self.registers.c as u16, source_value)
                         }
                         LoadByteTarget::OByte => {
-                            self.bus.write_bytes(0xFF0 + (self.bus.read_byte(self.pc) as u16), source_value)
+                            let b = self.bus.read_byte(self.pc) as u16;
+                            self.bus.write_bytes(0xFF0 + b, source_value)
                         }
                         // todo : test this
                         LoadByteTarget::OWord => {
@@ -1858,7 +1859,7 @@ impl CPU {
         }
     }
 
-    fn jump(&self, should_jump: bool, exception: bool) -> u16 {
+    fn jump(&mut self, should_jump: bool, exception: bool) -> u16 {
         if should_jump & !(exception) {
             // Gameboy is little endian so read pc + 2 as most significant bit
             // and pc + 1 as least significant bit
@@ -1889,56 +1890,56 @@ impl CPU {
 
 }
 
-#[cfg(test)]
-mod tests {
-    use memory_map::*;
-    use crate::gpu::GPU;
+// #[cfg(test)]
+// mod tests {
+//     use memory_map::*;
+//     use crate::gpu::GPU;
 
-    use super::*;
+//     use super::*;
 
-    #[test]
-    fn add_checker() {
-        let r: Registers = Registers {
-            a: 0xff,
-            b: 0x0f,
-            c: 0x38,
-            d: 0,
-            e: 0,
-            f: FlagsRegister {
-                zero: false,
-                subtract: false,
-                half_carry: false,
-                carry: true,
-            },
-            h: 0,
-            l: 0x8a,
-        };
-        let mem = [1; 0xFFFF];
-        let mut c: CPU = CPU {
-            clock: Clock { m: 0},
-            registers: r,
-            _rsv : Registers::new(),
-            bus: MemoryBus {
-                memory: mem,
-                gpu: GPU {
-                    vram: [0; VRAM_SIZE],
-                    tile_set: [crate::gpu::empty_tile(); 384],
-                },
-            },
-            sp: 0,
-            is_halted: false,
-            pc: 0,
-            m: 0,
-        };
-        let b: u8 = c.registers.get_hl() as u8;
-        // let a: u8 = c.registers.a;
-        // let new_value = c.sub(b, true);
-        // c.registers.a = new_value;
-        println!("1st {:?}", c);
-        let new_value = c.or(b, true);
-        c.registers.a = new_value;
-        println!("a = 0x{:x} , {}", new_value, new_value);
-        println!("2nd {:?}", c);
-        assert_eq!(1, 0);
-    }
-}
+//     #[test]
+//     fn add_checker() {
+//         let r: Registers = Registers {
+//             a: 0xff,
+//             b: 0x0f,
+//             c: 0x38,
+//             d: 0,
+//             e: 0,
+//             f: FlagsRegister {
+//                 zero: false,
+//                 subtract: false,
+//                 half_carry: false,
+//                 carry: true,
+//             },
+//             h: 0,
+//             l: 0x8a,
+//         };
+//         let mem = [1; 0xFFFF];
+//         let mut c: CPU = CPU {
+//             clock: Clock { m: 0},
+//             registers: r,
+//             _rsv : Registers::new(),
+//             bus: MemoryBus {
+//                 memory: mem,
+//                 gpu: GPU {
+//                     vram: [0; VRAM_SIZE],
+//                     tile_set: [crate::gpu::empty_tile(); 384],
+//                 },
+//             },
+//             sp: 0,
+//             is_halted: false,
+//             pc: 0,
+//             m: 0,
+//         };
+//         let b: u8 = c.registers.get_hl() as u8;
+//         // let a: u8 = c.registers.a;
+//         // let new_value = c.sub(b, true);
+//         // c.registers.a = new_value;
+//         println!("1st {:?}", c);
+//         let new_value = c.or(b, true);
+//         c.registers.a = new_value;
+//         println!("a = 0x{:x} , {}", new_value, new_value);
+//         println!("2nd {:?}", c);
+//         assert_eq!(1, 0);
+//     }
+// }

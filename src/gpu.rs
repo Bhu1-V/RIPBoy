@@ -1,8 +1,7 @@
-pub mod VRAM;
 pub mod tile_pixel_value;
 
 use tile_pixel_value::TilePixelValue;
-use VRAM::*;
+use crate::cpu::memory_map::*;
 
 type Tile = [[TilePixelValue; 8]; 8];
 

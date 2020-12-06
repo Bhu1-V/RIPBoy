@@ -1,5 +1,6 @@
 use super::target::*;
 pub enum Instruction {
+    
     ADD(ArthemeticTarget),
     INC(IncDecTarget),
     DEC(IncDecTarget),

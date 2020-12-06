@@ -11,6 +11,7 @@ pub mod instruction;
 pub mod memory_bus;
 pub mod registers;
 pub mod target;
+pub mod memory_map;
 
 #[derive(Debug)]
 pub struct CPU {
@@ -1890,7 +1891,8 @@ impl CPU {
 
 #[cfg(test)]
 mod tests {
-    use crate::gpu::{GPU, VRAM::VRAM_SIZE};
+    use memory_map::*;
+    use crate::gpu::GPU;
 
     use super::*;
 

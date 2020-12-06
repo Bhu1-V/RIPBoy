@@ -9,9 +9,10 @@ pub const BIOS_BEGIN : usize = 0x0000;
 pub const BIOS_END : usize = 0x00FF;
 pub const BIOS_SIZE : usize = BIOS_END - BIOS_BEGIN + 1;
 
-pub const CART_HEAD_BEGIN : usize = 0x0100;
-pub const CART_HEAD_END : usize = 0x014F;
-pub const CART_HEAD_SIZE : usize = CART_HEAD_END - CART_HEAD_BEGIN + 1;
+// pub const CART_HEAD_BEGIN : usize = 0x0100;
+// pub const CART_HEAD_END : usize = 0x014F;
+// pub const CART_HEAD_SIZE : usize = CART_HEAD_END - CART_HEAD_BEGIN + 1;
+
 
 // ROM - 1
 
@@ -58,6 +59,6 @@ pub const MM_IO_SIZE: usize = MM_IO_END - MM_IO_BEGIN + 1;
 
 // ZERO - PAGE RAM
 
-pub const ZRAM_BEGIN: usize = 0xFE00;
-pub const ZRAM_END: usize = 0xFE9F;
+pub const ZRAM_BEGIN: usize = 0xFE80;
+pub const ZRAM_END: usize = 0xFFFF;
 pub const ZRAM_SIZE: usize = ZRAM_END - ZRAM_BEGIN + 1;

@@ -12,9 +12,74 @@ pub fn empty_tile() -> Tile {
 pub struct GPU {
     pub vram: [u8; VRAM_SIZE],
     pub tile_set: [Tile; 384],
+    _modeclock : u16,
+    _mode : u8,
+    _line : u8,
 }
 
 impl GPU {
+
+    pub fn step(&mut self,cpu_clock:u16){
+        self._modeclock += cpu_clock;
+
+        match self._mode {
+            // OAM Read Mode , Scan_Line Actice
+            2 => {
+                if self._modeclock >= 80 {
+                    self._modeclock = 0;
+                    self._mode = 3;
+                }
+            }
+
+            // VRAM read mode, Scan_Line Active
+            3 => {
+                if self._modeclock >= 172 {
+
+                    // enter h_blank mode
+                    self._modeclock = 0;
+                    self._mode = 0;
+
+                    // write scanline to frame buffer
+                    self.render_scan();
+                }
+            }
+
+            0 => {
+                if self._modeclock >= 204 {
+
+                    self._modeclock = 0;
+                    self._line += 1;
+
+                    if self._line == 143 {
+                        // enter v-blank mode
+                        self._mode = 1;
+                        // todo add gpu screen to frame buffer for display.
+                    }else {
+                        self._mode = 2;
+                    }
+                }
+            }
+
+            1 => {
+                if self._modeclock >= 456 {
+                    self._modeclock = 0;
+                    self._line += 1;
+
+                    if self._line > 153 {
+                        self._mode = 2;
+                        self._line = 0;
+                    }
+                }
+            }
+
+            _ => panic!("UNKNOWN GPU MODE"),
+        }
+    }
+
+    fn render_scan(&self){
+
+    }
+
     pub fn read_vram(&self, address: usize) -> u8 {
         self.vram[address]
     }

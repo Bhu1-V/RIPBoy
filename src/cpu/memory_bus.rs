@@ -25,10 +25,6 @@ pub struct MemoryBus {
 
     // Memory Regions
     _bios: [u8; BIOS_SIZE],
-    _rom: [u8; ROM_0_SIZE],
-    _wram: [u8; WORKING_RAM_SIZE],
-    _eram: [u8; EXTERNAL_RAM_SIZE],
-    _zram: [u8; ZRAM_SIZE],
 
     pub memory: [u8; 0xFFFF],
     pub gpu: GPU,
@@ -155,11 +151,11 @@ impl MemoryBus {
                     }
                 }
 
-                return self._rom[address - ROM_0_BEGIN];
+                return self.memory[address];
             }
 
             ROM_0_BEGIN..=ROM_0_END => {
-                return self._rom[address - ROM_0_BEGIN];
+                return self.memory[address - ROM_0_BEGIN];
             }
 
             ROM_1_BEGIN..=ROM_1_END => {
@@ -177,7 +173,7 @@ impl MemoryBus {
             }
 
             WORKING_RAM_BEGIN..=WORKING_RAM_END | W_SHADOW_RAM_BEGIN..=W_SHADOW_RAM_END => {
-                return self._wram[address - WORKING_RAM_BEGIN];
+                return self.memory[address];
             }
 
             SPRITE_RAM_BEGIN..=SPRITE_RAM_END => {
@@ -186,7 +182,7 @@ impl MemoryBus {
             }
 
             ZRAM_BEGIN..=ZRAM_END => {
-                return self._zram[address - ZRAM_BEGIN];
+                return self.memory[address - ZRAM_BEGIN];
             }
 
             _ => self.memory[address as usize],
@@ -218,7 +214,7 @@ impl MemoryBus {
             }
 
             WORKING_RAM_BEGIN..=WORKING_RAM_END | W_SHADOW_RAM_BEGIN..=W_SHADOW_RAM_END => {
-                self._wram[address - WORKING_RAM_BEGIN] = value;
+                self.memory[address - WORKING_RAM_BEGIN] = value;
             }
 
             SPRITE_RAM_BEGIN..=SPRITE_RAM_END => {
@@ -227,7 +223,7 @@ impl MemoryBus {
             }
 
             ZRAM_BEGIN..=ZRAM_END => {
-                self._zram[address - ZRAM_BEGIN] = value;
+                self.memory[address - ZRAM_BEGIN] = value;
             }
 
             _ => {

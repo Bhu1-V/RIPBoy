@@ -12,6 +12,7 @@ pub mod memory_bus;
 pub mod memory_map;
 pub mod registers;
 pub mod target;
+pub mod timer;
 
 #[derive(Debug)]
 pub struct CPU {

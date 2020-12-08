@@ -9,15 +9,15 @@ pub mod clock;
 pub mod flags_register;
 pub mod instruction;
 pub mod memory_bus;
+pub mod memory_map;
 pub mod registers;
 pub mod target;
-pub mod memory_map;
 
 #[derive(Debug)]
 pub struct CPU {
     clock: Clock,
     registers: Registers,
-    _rsv : Registers,
+    _rsv: Registers,
     bus: MemoryBus,
     pc: u16,
     sp: u16,
@@ -57,46 +57,37 @@ impl CPU {
                     }
                     ArthemeticTarget::HL => {
                         self.m = 1;
-                        
+
                         value = self.bus.read_byte(self.registers.get_hl());
                     }
                     ArthemeticTarget::D8 => {
                         // TO-DO : Implement correctly
-                        self.m = 1;  
+                        self.m = 1;
                         value = self.read_next_byte();
                     }
                     ArthemeticTarget::HLBC => {
-                        let new_val = self.add_16bit(
-                            self.registers.get_hl(),
-                            self.registers.get_bc()
-                        );
+                        let new_val =
+                            self.add_16bit(self.registers.get_hl(), self.registers.get_bc());
                         self.registers.set_hl(new_val);
                         self.m = 3;
                         return self.pc.wrapping_add(1);
                     }
                     ArthemeticTarget::HLDE => {
-                        let new_val = self.add_16bit(
-                            self.registers.get_hl(),
-                            self.registers.get_de()
-                        );
+                        let new_val =
+                            self.add_16bit(self.registers.get_hl(), self.registers.get_de());
                         self.registers.set_hl(new_val);
                         self.m = 3;
                         return self.pc.wrapping_add(1);
                     }
                     ArthemeticTarget::HLHL => {
-                        let new_val = self.add_16bit(
-                            self.registers.get_hl(),
-                            self.registers.get_hl()
-                        );
+                        let new_val =
+                            self.add_16bit(self.registers.get_hl(), self.registers.get_hl());
                         self.registers.set_hl(new_val);
                         self.m = 3;
                         return self.pc.wrapping_add(1);
                     }
                     ArthemeticTarget::HLSP => {
-                        let new_val = self.add_16bit(
-                            self.registers.get_hl(),
-                            self.sp,
-                        );
+                        let new_val = self.add_16bit(self.registers.get_hl(), self.sp);
                         self.registers.set_hl(new_val);
                         self.m = 3;
                         return self.pc.wrapping_add(1);
@@ -104,10 +95,7 @@ impl CPU {
                     ArthemeticTarget::SP => {
                         // If ERROR CHECK THIS.
                         let b = self.read_next_byte() as u16;
-                        let new_val = self.add_16bit(
-                            self.sp,
-                            b
-                        );
+                        let new_val = self.add_16bit(self.sp, b);
                         self.sp = new_val;
                         self.m = 4;
                         return self.pc.wrapping_add(1);
@@ -116,7 +104,7 @@ impl CPU {
                 let new_value = self.add(self.registers.a, value, false);
                 self.registers.a = new_value;
                 self.m += 1;
-                
+
                 return self.pc.wrapping_add(1);
             }
 
@@ -145,22 +133,22 @@ impl CPU {
                     }
                     ArthemeticTarget::HL => {
                         self.m = 1;
-                        
+
                         value = self.bus.read_byte(self.registers.get_hl());
                     }
                     ArthemeticTarget::D8 => {
                         // TO-DO : Implement correctly
                         self.m = 1;
-                        
+
                         value = self.read_next_byte();
                     }
 
                     _ => panic!("Reached Unreachable code"),
                 }
-                let new_value = self.sub(self.registers.a,value, false);
+                let new_value = self.sub(self.registers.a, value, false);
                 self.registers.a = new_value;
                 self.m += 1;
-                
+
                 return self.pc.wrapping_add(1);
             }
 
@@ -189,13 +177,13 @@ impl CPU {
                     }
                     ArthemeticTarget::HL => {
                         self.m = 1;
-                        
+
                         value = self.bus.read_byte(self.registers.get_hl());
                     }
                     ArthemeticTarget::D8 => {
                         // TO-DO : Implement correctly
                         self.m = 1;
-                        
+
                         value = self.read_next_byte();
                     }
                     _ => panic!("Reached Unreachable code"),
@@ -205,7 +193,7 @@ impl CPU {
                 let new_value = self.add(self.registers.a, value, false);
                 self.registers.a = new_value;
                 self.m += 1;
-                
+
                 return self.pc.wrapping_add(1);
             }
 
@@ -234,22 +222,22 @@ impl CPU {
                     }
                     ArthemeticTarget::HL => {
                         self.m = 1;
-                        
+
                         value = self.bus.read_byte(self.registers.get_hl());
                     }
                     ArthemeticTarget::D8 => {
                         // TO-DO : Implement correctly
                         self.m = 1;
-                        
+
                         value = self.read_next_byte();
                     }
                     _ => panic!("Reached Unreachable code"),
                 }
-                let new_value = self.sub(self.registers.a,value, true);
+                let new_value = self.sub(self.registers.a, value, true);
                 self.registers.a = new_value;
-                let new_value = self.sub(self.registers.a,value, false);
+                let new_value = self.sub(self.registers.a, value, false);
                 self.m += 1;
-                
+
                 self.registers.a = new_value;
                 return self.pc.wrapping_add(1);
             }
@@ -279,20 +267,20 @@ impl CPU {
                     }
                     ArthemeticTarget::HL => {
                         self.m = 1;
-                        
+
                         value = self.bus.read_byte(self.registers.get_hl());
                     }
                     ArthemeticTarget::D8 => {
                         // TO-DO : Implement correctly
                         self.m = 1;
-                        
+
                         value = self.read_next_byte();
                     }
                     _ => panic!("Reached Unreachable code"),
                 }
-                self.sub(self.registers.a,value, false);
+                self.sub(self.registers.a, value, false);
                 self.m += 1;
-                
+
                 return self.pc.wrapping_add(1);
             }
 
@@ -326,7 +314,7 @@ impl CPU {
                     ArthemeticTarget::D8 => {
                         // TO-DO : Implement correctly
                         self.m = 1;
-                        
+
                         value = self.read_next_byte();
                     }
                     _ => panic!("Reached Unreachable code"),
@@ -334,7 +322,7 @@ impl CPU {
                 let new_value = self.and(value);
                 self.registers.a = new_value;
                 self.m += 1;
-                
+
                 return self.pc.wrapping_add(1);
             }
 
@@ -363,20 +351,20 @@ impl CPU {
                     }
                     ArthemeticTarget::HL => {
                         self.m = 1;
-                        
+
                         value = self.bus.read_byte(self.registers.get_hl());
                     }
                     ArthemeticTarget::D8 => {
                         // TO-DO : Implement correctly
                         self.m = 1;
-                        
+
                         value = self.read_next_byte();
                     }
                     _ => panic!("Reached Unreachable code"),
                 }
                 let new_value = self.or(value, false);
                 self.m += 1;
-                
+
                 self.registers.a = new_value;
                 return self.pc.wrapping_add(1);
             }
@@ -406,20 +394,20 @@ impl CPU {
                     }
                     ArthemeticTarget::HL => {
                         self.m = 1;
-                        
+
                         value = self.bus.read_byte(self.registers.get_hl());
                     }
                     ArthemeticTarget::D8 => {
                         // TO-DO : Implement correctly
                         self.m = 1;
-                        
+
                         value = self.read_next_byte();
                     }
                     _ => panic!("Reached Unreachable code"),
                 }
                 let new_value = self.or(value, true);
                 self.m += 1;
-                
+
                 self.registers.a = new_value;
                 return self.pc.wrapping_add(1);
             }
@@ -464,37 +452,37 @@ impl CPU {
                     }
                     IncDecTarget::HL2 => {
                         self.m = 2;
-                        
+
                         value = self.bus.read_byte(self.registers.get_hl());
-                        value = self.add(value,1,false);
+                        value = self.add(value, 1, false);
                         self.bus.write_bytes(self.registers.get_hl(), value)
                     }
                     IncDecTarget::BC => {
                         // TO-DO : Implement correctly
-                        let (val , over_flowed) = self.registers.c.overflowing_add(1);
+                        let (val, over_flowed) = self.registers.c.overflowing_add(1);
                         self.registers.c = val;
                         if over_flowed {
-                            let (val , _over_flowed) = self.registers.b.overflowing_add(1);
+                            let (val, _over_flowed) = self.registers.b.overflowing_add(1);
                             self.registers.b = val;
                         }
                     }
 
                     IncDecTarget::DE => {
                         // TO-DO : Implement correctly
-                        let (val , over_flowed) = self.registers.e.overflowing_add(1);
+                        let (val, over_flowed) = self.registers.e.overflowing_add(1);
                         self.registers.e = val;
                         if over_flowed {
-                            let (val , _over_flowed) = self.registers.d.overflowing_add(1);
+                            let (val, _over_flowed) = self.registers.d.overflowing_add(1);
                             self.registers.d = val;
                         }
                     }
 
                     IncDecTarget::HL => {
                         // TO-DO : Implement correctly
-                        let (val , over_flowed) = self.registers.l.overflowing_add(1);
+                        let (val, over_flowed) = self.registers.l.overflowing_add(1);
                         self.registers.l = val;
                         if over_flowed {
-                            let (val , _over_flowed) = self.registers.h.overflowing_add(1);
+                            let (val, _over_flowed) = self.registers.h.overflowing_add(1);
                             self.registers.h = val;
                         }
                     }
@@ -502,10 +490,9 @@ impl CPU {
                     IncDecTarget::SP => {
                         self.sp = self.sp.wrapping_add(1);
                     }
-
                 }
                 self.m += 1;
-                
+
                 return self.pc.wrapping_add(1);
             }
 
@@ -534,37 +521,37 @@ impl CPU {
                     }
                     IncDecTarget::HL2 => {
                         self.m = 2;
-                        
+
                         value = self.bus.read_byte(self.registers.get_hl());
-                        value = self.sub(value,1,false);
+                        value = self.sub(value, 1, false);
                         self.bus.write_bytes(self.registers.get_hl(), value)
                     }
                     IncDecTarget::BC => {
                         // TO-DO : Implement correctly
-                        let (val , over_flowed) = self.registers.c.overflowing_sub(1);
+                        let (val, over_flowed) = self.registers.c.overflowing_sub(1);
                         self.registers.c = val;
                         if over_flowed {
-                            let (val , _over_flowed) = self.registers.b.overflowing_sub(1);
+                            let (val, _over_flowed) = self.registers.b.overflowing_sub(1);
                             self.registers.b = val;
                         }
                     }
 
                     IncDecTarget::DE => {
                         // TO-DO : Implement correctly
-                        let (val , over_flowed) = self.registers.e.overflowing_sub(1);
+                        let (val, over_flowed) = self.registers.e.overflowing_sub(1);
                         self.registers.e = val;
                         if over_flowed {
-                            let (val , _over_flowed) = self.registers.d.overflowing_sub(1);
+                            let (val, _over_flowed) = self.registers.d.overflowing_sub(1);
                             self.registers.d = val;
                         }
                     }
 
                     IncDecTarget::HL => {
                         // TO-DO : Implement correctly
-                        let (val , over_flowed) = self.registers.l.overflowing_sub(1);
+                        let (val, over_flowed) = self.registers.l.overflowing_sub(1);
                         self.registers.l = val;
                         if over_flowed {
-                            let (val , _over_flowed) = self.registers.h.overflowing_sub(1);
+                            let (val, _over_flowed) = self.registers.h.overflowing_sub(1);
                             self.registers.h = val;
                         }
                     }
@@ -574,7 +561,7 @@ impl CPU {
                     }
                 }
                 self.m += 1;
-                
+
                 return self.pc.wrapping_add(1);
             }
 
@@ -594,23 +581,25 @@ impl CPU {
                         LoadByteSource::DEV => self.bus.read_byte(self.registers.get_de()),
                         LoadByteSource::HLI => {
                             let r = self.bus.read_byte(self.registers.get_hl());
-                            let n:u16 = self.registers.get_hl().wrapping_add(1);
+                            let n: u16 = self.registers.get_hl().wrapping_add(1);
                             self.registers.set_hl(n);
                             r
                         }
                         LoadByteSource::HLD => {
                             let r = self.bus.read_byte(self.registers.get_hl());
-                            let n:u16 = self.registers.get_hl().wrapping_sub(1);
+                            let n: u16 = self.registers.get_hl().wrapping_sub(1);
                             self.registers.set_hl(n);
                             r
                         }
                         LoadByteSource::OC => {
-                            let u :u16 = 0xFF00;
-                            let r = self.bus.read_byte(u.overflowing_add(self.registers.c as u16).0);
+                            let u: u16 = 0xFF00;
+                            let r = self
+                                .bus
+                                .read_byte(u.overflowing_add(self.registers.c as u16).0);
                             r
                         }
                         LoadByteSource::OByte => {
-                            let u :u16 = 0xFF00;
+                            let u: u16 = 0xFF00;
                             let b = self.read_next_byte() as u16;
                             let r = self.bus.read_byte(u.overflowing_add(b).0);
                             r
@@ -622,7 +611,6 @@ impl CPU {
                             r
                         }
                         _ => panic!("Load source error"),
-                        
                     };
                     // todo - add timing
                     match target {
@@ -633,8 +621,7 @@ impl CPU {
                         LoadByteTarget::E => self.registers.e = source_value,
                         LoadByteTarget::H => self.registers.h = source_value,
                         LoadByteTarget::L => self.registers.l = source_value,
-                        LoadByteTarget::HLI | LoadByteTarget::HL |
-                        LoadByteTarget::HLD => {
+                        LoadByteTarget::HLI | LoadByteTarget::HL | LoadByteTarget::HLD => {
                             self.bus.write_bytes(self.registers.get_hl(), source_value)
                         }
                         LoadByteTarget::BCV => {
@@ -643,16 +630,16 @@ impl CPU {
                         LoadByteTarget::DEV => {
                             self.bus.write_bytes(self.registers.get_de(), source_value)
                         }
-                        LoadByteTarget::OC => {
-                            self.bus.write_bytes(0xFF00 + self.registers.c as u16, source_value)
-                        }
+                        LoadByteTarget::OC => self
+                            .bus
+                            .write_bytes(0xFF00 + self.registers.c as u16, source_value),
                         LoadByteTarget::OByte => {
                             let b = self.bus.read_byte(self.pc) as u16;
                             self.bus.write_bytes(0xFF0 + b, source_value)
                         }
                         // todo : test this
                         LoadByteTarget::OWord => {
-                            let w =self.read_next_word();
+                            let w = self.read_next_word();
                             self.bus.write_bytes(w, source_value)
                         }
 
@@ -671,11 +658,9 @@ impl CPU {
                         LoadWordSource::SPr8 => {
                             let b = self.read_next_byte() as u16;
                             b.wrapping_add(self.sp)
-                        },
+                        }
                         LoadWordSource::HL => self.registers.get_hl(),
-                        
                         // _ => panic!("Load source error"),
-                        
                     };
                     // todo - add timing
                     match target {
@@ -684,9 +669,8 @@ impl CPU {
                         LoadWordTarget::HL => self.registers.set_hl(source_value),
                         LoadWordTarget::SP => self.sp = source_value,
                         LoadWordTarget::A16 => {
-                            self.bus.write_bytes(source_value, (self.sp & 0xFF) as u8 );
-                        }
-                        // _ => panic!("add more"),
+                            self.bus.write_bytes(source_value, (self.sp & 0xFF) as u8);
+                        } // _ => panic!("add more"),
                     }
                     self.pc.wrapping_add(1)
                 }
@@ -710,7 +694,7 @@ impl CPU {
                 self.m = 3;
                 self.sp = self.sp.wrapping_sub(2);
                 self.bus.write_bytes(self.sp, (self.pc & 0xFF) as u8);
-                self.bus.write_bytes(self.sp + 1 , (self.pc >> 8)as u8);         
+                self.bus.write_bytes(self.sp + 1, (self.pc >> 8) as u8);
                 match target {
                     RSTTarget::H00 => 0x00 as u16,
                     RSTTarget::H08 => 0x08 as u16,
@@ -789,11 +773,13 @@ impl CPU {
                 let b = self.registers.f.get_carry();
                 if (self.registers.a & 1) == 1 {
                     self.registers.f.set_carry(true);
-                }else{
+                } else {
                     self.registers.f.set_carry(false);
                 }
                 self.registers.a >>= 1;
-                if b {self.registers.a |= 0x80;};
+                if b {
+                    self.registers.a |= 0x80;
+                };
                 self.pc.wrapping_add(1)
             }
 
@@ -802,7 +788,7 @@ impl CPU {
                     self.registers.f.set_carry(true);
                     self.registers.a >>= 1;
                     self.registers.a |= 0x80;
-                }else{
+                } else {
                     self.registers.f.set_carry(false);
                     self.registers.a >>= 1;
                 }
@@ -813,22 +799,23 @@ impl CPU {
                 let b = self.registers.f.get_carry();
                 if (self.registers.a & 0x80) == 1 {
                     self.registers.f.set_carry(true);
-                }else{
+                } else {
                     self.registers.f.set_carry(false);
                 }
                 self.registers.a <<= 1;
-                if b {self.registers.a |= 1};
+                if b {
+                    self.registers.a |= 1
+                };
                 self.pc.wrapping_add(1)
             }
 
-            
             Instruction::RLCA => {
                 let b = self.registers.f.get_carry();
                 if (self.registers.a & 0x80) == 1 {
                     self.registers.f.set_carry(true);
                     self.registers.a <<= 1;
                     self.registers.a |= 1;
-                }else{
+                } else {
                     self.registers.f.set_carry(false);
                     self.registers.a <<= 1;
                 }
@@ -846,13 +833,12 @@ impl CPU {
             Instruction::DAA => {
                 let a = self.registers.a;
                 let mut _f = self.registers.f.con();
-                if ((_f & 0x20) != 0) || ((self.registers.a & 15) > 9)
-                { 
+                if ((_f & 0x20) != 0) || ((self.registers.a & 15) > 9) {
                     self.registers.a += 6;
                 }
                 _f &= 0xEF;
                 self.registers.f = FlagsRegister::from(_f);
-                if (_f & 0x20) != 0 || ( a > 0x99) {
+                if (_f & 0x20) != 0 || (a > 0x99) {
                     self.registers.a += 0x60;
                     _f |= 0x10;
                     self.registers.f = FlagsRegister::from(_f);
@@ -866,64 +852,78 @@ impl CPU {
                 match target {
                     PrefixTarget::B => {
                         self.registers.b = self.registers.b.rotate_left(1);
-                        if self.registers.b == 0 {self.registers.f.reset()}
+                        if self.registers.b == 0 {
+                            self.registers.f.reset()
+                        }
                         if (self.registers.b & 0x80) == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                     }
                     PrefixTarget::C => {
                         self.registers.c = self.registers.c.rotate_left(1);
-                        if self.registers.c == 0 {self.registers.f.reset()}
+                        if self.registers.c == 0 {
+                            self.registers.f.reset()
+                        }
                         if (self.registers.c & 0x80) == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                     }
                     PrefixTarget::D => {
                         self.registers.d = self.registers.d.rotate_left(1);
-                        if self.registers.d == 0 {self.registers.f.reset()}
+                        if self.registers.d == 0 {
+                            self.registers.f.reset()
+                        }
                         if (self.registers.d & 0x80) == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                     }
                     PrefixTarget::E => {
                         self.registers.e = self.registers.e.rotate_left(1);
-                        if self.registers.e == 0 {self.registers.f.reset()}
+                        if self.registers.e == 0 {
+                            self.registers.f.reset()
+                        }
                         if (self.registers.e & 0x80) == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                     }
                     PrefixTarget::H => {
                         self.registers.h = self.registers.h.rotate_left(1);
-                        if self.registers.h == 0 {self.registers.f.reset()}
+                        if self.registers.h == 0 {
+                            self.registers.f.reset()
+                        }
                         if (self.registers.h & 0x80) == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                     }
                     PrefixTarget::L => {
                         self.registers.l = self.registers.l.rotate_left(1);
-                        if self.registers.l == 0 {self.registers.f.reset()}
+                        if self.registers.l == 0 {
+                            self.registers.f.reset()
+                        }
                         if (self.registers.l & 0x80) == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                     }
                     PrefixTarget::A => {
                         self.registers.a = self.registers.a.rotate_left(1);
-                        if self.registers.a == 0 {self.registers.f.reset()}
+                        if self.registers.a == 0 {
+                            self.registers.f.reset()
+                        }
                         if (self.registers.a & 0x80) == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                     }
@@ -931,10 +931,12 @@ impl CPU {
                         let mut value = self.bus.read_byte(self.registers.get_hl());
                         value = value.rotate_left(1);
                         self.bus.write_bytes(self.registers.get_hl(), value);
-                        if value == 0 {self.registers.f.reset()}
+                        if value == 0 {
+                            self.registers.f.reset()
+                        }
                         if (value & 0x80) == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                     }
@@ -945,14 +947,10 @@ impl CPU {
             Instruction::RL(target) => {
                 match target {
                     PrefixTarget::B => {
-                        let x = if self.registers.f.get_carry() {
-                            1u8
-                        }else{
-                            0
-                        };
-                        if self.registers.b & 0x80 == 1{
+                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
+                        if self.registers.b & 0x80 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         self.registers.b = (self.registers.b << 1) + x;
@@ -961,14 +959,10 @@ impl CPU {
                         }
                     }
                     PrefixTarget::C => {
-                        let x = if self.registers.f.get_carry() {
-                            1u8
-                        }else{
-                            0
-                        };
-                        if self.registers.c & 0x80 == 1{
+                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
+                        if self.registers.c & 0x80 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         self.registers.c = (self.registers.c << 1) + x;
@@ -977,14 +971,10 @@ impl CPU {
                         }
                     }
                     PrefixTarget::D => {
-                        let x = if self.registers.f.get_carry() {
-                            1u8
-                        }else{
-                            0
-                        };
-                        if self.registers.d & 0x80 == 1{
+                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
+                        if self.registers.d & 0x80 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         self.registers.d = (self.registers.d << 1) + x;
@@ -994,14 +984,10 @@ impl CPU {
                     }
 
                     PrefixTarget::E => {
-                        let x = if self.registers.f.get_carry() {
-                            1u8
-                        }else{
-                            0
-                        };
-                        if self.registers.e & 0x80 == 1{
+                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
+                        if self.registers.e & 0x80 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         self.registers.e = (self.registers.e << 1) + x;
@@ -1011,14 +997,10 @@ impl CPU {
                     }
 
                     PrefixTarget::H => {
-                        let x = if self.registers.f.get_carry() {
-                            1u8
-                        }else{
-                            0
-                        };
-                        if self.registers.h & 0x80 == 1{
+                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
+                        if self.registers.h & 0x80 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         self.registers.h = (self.registers.h << 1) + x;
@@ -1028,14 +1010,10 @@ impl CPU {
                     }
 
                     PrefixTarget::L => {
-                        let x = if self.registers.f.get_carry() {
-                            1u8
-                        }else{
-                            0
-                        };
-                        if self.registers.l & 0x80 == 1{
+                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
+                        if self.registers.l & 0x80 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         self.registers.l = (self.registers.l << 1) + x;
@@ -1045,14 +1023,10 @@ impl CPU {
                     }
 
                     PrefixTarget::A => {
-                        let x = if self.registers.f.get_carry() {
-                            1u8
-                        }else{
-                            0
-                        };
-                        if self.registers.a & 0x80 == 1{
+                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
+                        if self.registers.a & 0x80 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         self.registers.a = (self.registers.a << 1) + x;
@@ -1062,15 +1036,11 @@ impl CPU {
                     }
 
                     PrefixTarget::HLV => {
-                        let x = if self.registers.f.get_carry() {
-                            1u8
-                        }else{
-                            0
-                        };
+                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
                         let mut value = self.bus.read_byte(self.registers.get_hl());
-                        if value & 0x80 == 1{
+                        if value & 0x80 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         value = (value << 1) + x;
@@ -1087,64 +1057,78 @@ impl CPU {
                 match target {
                     PrefixTarget::B => {
                         self.registers.b = self.registers.b.rotate_right(1);
-                        if self.registers.b == 0 {self.registers.f.reset()}
+                        if self.registers.b == 0 {
+                            self.registers.f.reset()
+                        }
                         if (self.registers.b & 0x1) == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                     }
                     PrefixTarget::C => {
                         self.registers.c = self.registers.c.rotate_right(1);
-                        if self.registers.c == 0 {self.registers.f.reset()}
+                        if self.registers.c == 0 {
+                            self.registers.f.reset()
+                        }
                         if (self.registers.c & 0x1) == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                     }
                     PrefixTarget::D => {
                         self.registers.d = self.registers.d.rotate_right(1);
-                        if self.registers.d == 0 {self.registers.f.reset()}
+                        if self.registers.d == 0 {
+                            self.registers.f.reset()
+                        }
                         if (self.registers.d & 0x1) == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                     }
                     PrefixTarget::E => {
                         self.registers.e = self.registers.e.rotate_right(1);
-                        if self.registers.e == 0 {self.registers.f.reset()}
+                        if self.registers.e == 0 {
+                            self.registers.f.reset()
+                        }
                         if (self.registers.e & 0x1) == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                     }
                     PrefixTarget::H => {
                         self.registers.h = self.registers.h.rotate_right(1);
-                        if self.registers.h == 0 {self.registers.f.reset()}
+                        if self.registers.h == 0 {
+                            self.registers.f.reset()
+                        }
                         if (self.registers.h & 0x1) == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                     }
                     PrefixTarget::L => {
                         self.registers.l = self.registers.l.rotate_right(1);
-                        if self.registers.l == 0 {self.registers.f.reset()}
+                        if self.registers.l == 0 {
+                            self.registers.f.reset()
+                        }
                         if (self.registers.l & 0x1) == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                     }
                     PrefixTarget::A => {
                         self.registers.a = self.registers.a.rotate_right(1);
-                        if self.registers.a == 0 {self.registers.f.reset()}
+                        if self.registers.a == 0 {
+                            self.registers.f.reset()
+                        }
                         if (self.registers.a & 0x1) == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                     }
@@ -1152,10 +1136,12 @@ impl CPU {
                         let mut value = self.bus.read_byte(self.registers.get_hl());
                         value = value.rotate_right(1);
                         self.bus.write_bytes(self.registers.get_hl(), value);
-                        if value == 0 {self.registers.f.reset()}
+                        if value == 0 {
+                            self.registers.f.reset()
+                        }
                         if (value & 0x1) == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                     }
@@ -1166,14 +1152,10 @@ impl CPU {
             Instruction::RR(target) => {
                 match target {
                     PrefixTarget::B => {
-                        let x = if self.registers.f.get_carry() {
-                            1u8
-                        }else{
-                            0
-                        };
-                        if self.registers.b & 0x1 == 1{
+                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
+                        if self.registers.b & 0x1 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         self.registers.b = (self.registers.b >> 1) + x;
@@ -1182,14 +1164,10 @@ impl CPU {
                         }
                     }
                     PrefixTarget::C => {
-                        let x = if self.registers.f.get_carry() {
-                            1u8
-                        }else{
-                            0
-                        };
-                        if self.registers.c & 0x1 == 1{
+                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
+                        if self.registers.c & 0x1 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         self.registers.c = (self.registers.c >> 1) + x;
@@ -1198,14 +1176,10 @@ impl CPU {
                         }
                     }
                     PrefixTarget::D => {
-                        let x = if self.registers.f.get_carry() {
-                            1u8
-                        }else{
-                            0
-                        };
-                        if self.registers.d & 0x1 == 1{
+                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
+                        if self.registers.d & 0x1 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         self.registers.d = (self.registers.d >> 1) + x;
@@ -1215,14 +1189,10 @@ impl CPU {
                     }
 
                     PrefixTarget::E => {
-                        let x = if self.registers.f.get_carry() {
-                            1u8
-                        }else{
-                            0
-                        };
-                        if self.registers.e & 0x1 == 1{
+                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
+                        if self.registers.e & 0x1 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         self.registers.e = (self.registers.e >> 1) + x;
@@ -1232,14 +1202,10 @@ impl CPU {
                     }
 
                     PrefixTarget::H => {
-                        let x = if self.registers.f.get_carry() {
-                            1u8
-                        }else{
-                            0
-                        };
-                        if self.registers.h & 0x1 == 1{
+                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
+                        if self.registers.h & 0x1 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         self.registers.h = (self.registers.h >> 1) + x;
@@ -1249,14 +1215,10 @@ impl CPU {
                     }
 
                     PrefixTarget::L => {
-                        let x = if self.registers.f.get_carry() {
-                            1u8
-                        }else{
-                            0
-                        };
-                        if self.registers.l & 0x1 == 1{
+                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
+                        if self.registers.l & 0x1 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         self.registers.l = (self.registers.l >> 1) + x;
@@ -1266,14 +1228,10 @@ impl CPU {
                     }
 
                     PrefixTarget::A => {
-                        let x = if self.registers.f.get_carry() {
-                            1u8
-                        }else{
-                            0
-                        };
-                        if self.registers.a & 0x1 == 1{
+                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
+                        if self.registers.a & 0x1 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         self.registers.a = (self.registers.a >> 1) + x;
@@ -1283,15 +1241,11 @@ impl CPU {
                     }
 
                     PrefixTarget::HLV => {
-                        let x = if self.registers.f.get_carry() {
-                            1u8
-                        }else{
-                            0
-                        };
+                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
                         let mut value = self.bus.read_byte(self.registers.get_hl());
-                        if value & 0x1 == 1{
+                        if value & 0x1 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         value = (value >> 1) + x;
@@ -1309,7 +1263,7 @@ impl CPU {
                     PrefixTarget::B => {
                         if self.registers.b & 0x80 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         self.registers.b = self.registers.b << 1;
@@ -1318,7 +1272,7 @@ impl CPU {
                     PrefixTarget::C => {
                         if self.registers.c & 0x80 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         self.registers.c = self.registers.c << 1;
@@ -1327,7 +1281,7 @@ impl CPU {
                     PrefixTarget::D => {
                         if self.registers.d & 0x80 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         self.registers.d = self.registers.d << 1;
@@ -1336,7 +1290,7 @@ impl CPU {
                     PrefixTarget::E => {
                         if self.registers.e & 0x80 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         self.registers.e = self.registers.e << 1;
@@ -1345,7 +1299,7 @@ impl CPU {
                     PrefixTarget::H => {
                         if self.registers.h & 0x80 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         self.registers.h = self.registers.h << 1;
@@ -1354,7 +1308,7 @@ impl CPU {
                     PrefixTarget::L => {
                         if self.registers.l & 0x80 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         self.registers.l = self.registers.l << 1;
@@ -1363,7 +1317,7 @@ impl CPU {
                     PrefixTarget::A => {
                         if self.registers.a & 0x80 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         self.registers.a = self.registers.a << 1;
@@ -1373,7 +1327,7 @@ impl CPU {
                         let mut value = self.bus.read_byte(self.registers.get_hl());
                         if value & 0x80 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         value = value << 1;
@@ -1390,7 +1344,7 @@ impl CPU {
                     PrefixTarget::B => {
                         if self.registers.b & 0x1 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         self.registers.b = self.registers.b >> 1;
@@ -1399,7 +1353,7 @@ impl CPU {
                     PrefixTarget::C => {
                         if self.registers.c & 0x1 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         self.registers.c = self.registers.c >> 1;
@@ -1408,7 +1362,7 @@ impl CPU {
                     PrefixTarget::D => {
                         if self.registers.d & 0x1 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         self.registers.d = self.registers.d >> 1;
@@ -1417,7 +1371,7 @@ impl CPU {
                     PrefixTarget::E => {
                         if self.registers.e & 0x1 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         self.registers.e = self.registers.e >> 1;
@@ -1426,7 +1380,7 @@ impl CPU {
                     PrefixTarget::H => {
                         if self.registers.h & 0x1 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         self.registers.h = self.registers.h >> 1;
@@ -1435,7 +1389,7 @@ impl CPU {
                     PrefixTarget::L => {
                         if self.registers.l & 0x1 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         self.registers.l = self.registers.l >> 1;
@@ -1444,7 +1398,7 @@ impl CPU {
                     PrefixTarget::A => {
                         if self.registers.a & 0x1 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         self.registers.a = self.registers.a >> 1;
@@ -1454,7 +1408,7 @@ impl CPU {
                         let mut value = self.bus.read_byte(self.registers.get_hl());
                         if value & 0x1 == 1 {
                             self.registers.f.set_carry(true);
-                        }else{
+                        } else {
                             self.registers.f.set_carry(false);
                         }
                         value = value >> 1;
@@ -1467,48 +1421,48 @@ impl CPU {
             }
 
             Instruction::SWAP(target) => {
-                match target{
+                match target {
                     PrefixTarget::A => {
                         let upper = (self.registers.a & 0xF0) >> 4;
                         let down = (self.registers.a & 0xF) << 4;
                         self.registers.a = down | upper;
-                        self.registers.f.zero = if self.registers.a == 0 {true} else {false};
+                        self.registers.f.zero = if self.registers.a == 0 { true } else { false };
                     }
                     PrefixTarget::B => {
                         let upper = (self.registers.b & 0xF0) >> 4;
                         let down = (self.registers.b & 0xF) << 4;
                         self.registers.b = down | upper;
-                        self.registers.f.zero = if self.registers.b == 0 {true} else {false};
+                        self.registers.f.zero = if self.registers.b == 0 { true } else { false };
                     }
                     PrefixTarget::C => {
                         let upper = (self.registers.c & 0xF0) >> 4;
                         let down = (self.registers.c & 0xF) << 4;
                         self.registers.c = down | upper;
-                        self.registers.f.zero = if self.registers.c == 0 {true} else {false};
+                        self.registers.f.zero = if self.registers.c == 0 { true } else { false };
                     }
                     PrefixTarget::D => {
                         let upper = (self.registers.d & 0xF0) >> 4;
                         let down = (self.registers.d & 0xF) << 4;
                         self.registers.d = down | upper;
-                        self.registers.f.zero = if self.registers.d == 0 {true} else {false};
+                        self.registers.f.zero = if self.registers.d == 0 { true } else { false };
                     }
                     PrefixTarget::E => {
                         let upper = (self.registers.e & 0xF0) >> 4;
                         let down = (self.registers.e & 0xF) << 4;
                         self.registers.e = down | upper;
-                        self.registers.f.zero = if self.registers.e == 0 {true} else {false};
+                        self.registers.f.zero = if self.registers.e == 0 { true } else { false };
                     }
                     PrefixTarget::H => {
                         let upper = (self.registers.h & 0xF0) >> 4;
                         let down = (self.registers.h & 0xF) << 4;
                         self.registers.h = down | upper;
-                        self.registers.f.zero = if self.registers.h == 0 {true} else {false};
+                        self.registers.f.zero = if self.registers.h == 0 { true } else { false };
                     }
                     PrefixTarget::L => {
                         let upper = (self.registers.l & 0xF0) >> 4;
                         let down = (self.registers.l & 0xF) << 4;
                         self.registers.l = down | upper;
-                        self.registers.f.zero = if self.registers.l == 0 {true} else {false};
+                        self.registers.f.zero = if self.registers.l == 0 { true } else { false };
                     }
                     PrefixTarget::HLV => {
                         let mut value = self.bus.read_byte(self.registers.get_hl());
@@ -1516,9 +1470,9 @@ impl CPU {
                         let down = (value & 0xF) << 4;
                         value = down | upper;
                         self.bus.write_bytes(self.registers.get_hl(), value);
-                        self.registers.f.zero = if value == 0 {true} else {false};
+                        self.registers.f.zero = if value == 0 { true } else { false };
                     }
-                }   
+                }
                 self.pc.wrapping_add(1)
             }
 
@@ -1582,12 +1536,11 @@ impl CPU {
                         value = value | x;
                         self.bus.write_bytes(self.registers.get_hl(), value);
                     }
-
                 }
                 self.pc.wrapping_add(1)
             }
 
-            Instruction::BIT(BitManipulationType::Bit(target_bit,source_register)) => {
+            Instruction::BIT(BitManipulationType::Bit(target_bit, source_register)) => {
                 let source = match source_register {
                     SourceRegister::A => self.registers.a,
                     SourceRegister::B => self.registers.b,
@@ -1610,11 +1563,11 @@ impl CPU {
                 };
                 self.registers.f.half_carry = true;
                 self.registers.f.subtract = false;
-                self.registers.f.zero = if mask == 1 {true} else {false};
+                self.registers.f.zero = if mask == 1 { true } else { false };
                 self.pc.wrapping_add(1)
             }
 
-            Instruction::SET(BitManipulationType::Bit(target_bit,source_register)) => {
+            Instruction::SET(BitManipulationType::Bit(target_bit, source_register)) => {
                 let mut source = match source_register {
                     SourceRegister::A => self.registers.a,
                     SourceRegister::B => self.registers.b,
@@ -1643,12 +1596,12 @@ impl CPU {
                     SourceRegister::E => self.registers.e = source,
                     SourceRegister::H => self.registers.h = source,
                     SourceRegister::L => self.registers.l = source,
-                    SourceRegister::HLV => self.bus.write_bytes(self.registers.get_hl(),source),
+                    SourceRegister::HLV => self.bus.write_bytes(self.registers.get_hl(), source),
                 };
                 self.pc.wrapping_add(1)
             }
 
-            Instruction::RES(BitManipulationType::Bit(target_bit,source_register)) => {
+            Instruction::RES(BitManipulationType::Bit(target_bit, source_register)) => {
                 let mut source = match source_register {
                     SourceRegister::A => self.registers.a,
                     SourceRegister::B => self.registers.b,
@@ -1677,25 +1630,24 @@ impl CPU {
                     SourceRegister::E => self.registers.e = source,
                     SourceRegister::H => self.registers.h = source,
                     SourceRegister::L => self.registers.l = source,
-                    SourceRegister::HLV => self.bus.write_bytes(self.registers.get_hl(),source),
+                    SourceRegister::HLV => self.bus.write_bytes(self.registers.get_hl(), source),
                 };
                 self.pc.wrapping_add(1)
             }
-
-
-
-
 
             _ => panic!("Support More Instructions."),
         }
     }
     // TO- DO : if error check whether all sp adds are correctly done.
     fn rsv(&mut self) {
-        self._rsv.a = self.registers.a; self._rsv.b = self.registers.b;
-        self._rsv.c = self.registers.c; self._rsv.d = self.registers.d;
+        self._rsv.a = self.registers.a;
+        self._rsv.b = self.registers.b;
+        self._rsv.c = self.registers.c;
+        self._rsv.d = self.registers.d;
         self._rsv.e = self.registers.e;
         self._rsv.f = FlagsRegister::from(self.registers.f.con());
-        self._rsv.h = self.registers.h; self._rsv.l = self.registers.l;
+        self._rsv.h = self.registers.h;
+        self._rsv.l = self.registers.l;
     }
 
     fn call(&mut self, should_jump: bool) -> u16 {
@@ -1785,7 +1737,7 @@ impl CPU {
         }
     }
 
-    fn add_16bit(&mut self,reg: u16, val: u16) -> u16{
+    fn add_16bit(&mut self, reg: u16, val: u16) -> u16 {
         let (new_val, over_flowed) = reg.overflowing_add(val);
         self.registers.f = FlagsRegister {
             zero: self.registers.f.zero,
@@ -1796,8 +1748,7 @@ impl CPU {
         new_val
     }
 
-
-    fn sub(&mut self,reg:u8, val: u8, carry: bool) -> u8 {
+    fn sub(&mut self, reg: u8, val: u8, carry: bool) -> u8 {
         let cy = if carry {
             if self.registers.f.carry == true {
                 1
@@ -1815,7 +1766,7 @@ impl CPU {
             half_carry: ((reg & 0xF).overflowing_sub(val & 0xF)).0 > 0xF,
         };
         if carry {
-            self.sub(reg,cy, false)
+            self.sub(reg, cy, false)
         } else {
             new_val
         }
@@ -1848,14 +1799,14 @@ impl CPU {
         new_val
     }
 
-    fn jump_8bit(&mut self , should_jump: bool ) -> u16{
+    fn jump_8bit(&mut self, should_jump: bool) -> u16 {
         if should_jump {
             let b = self.read_next_byte() as i8;
             self.m = 3;
             return self.pc.wrapping_add(b as u16);
-        }else{
+        } else {
             self.m = 2;
-            return self.pc.wrapping_add(2)
+            return self.pc.wrapping_add(2);
         }
     }
 
@@ -1876,7 +1827,7 @@ impl CPU {
         }
     }
 
-    fn reset_registers(&mut self){
+    fn reset_registers(&mut self) {
         self.registers.a = self._rsv.a;
         self.registers.b = self._rsv.b;
         self.registers.c = self._rsv.c;
@@ -1886,8 +1837,6 @@ impl CPU {
         self.registers.h = self._rsv.h;
         self.registers.l = self._rsv.l;
     }
-
-
 }
 
 // #[cfg(test)]

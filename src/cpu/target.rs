@@ -74,19 +74,40 @@ pub enum LoadByteSource {
 }
 pub enum LoadType {
     Byte(LoadByteTarget, LoadByteSource),
-    Word(LoadWordTarget , LoadWordSource),
+    Word(LoadWordTarget, LoadWordSource),
 }
-pub enum LoadWordTarget{
-    BC, DE ,HL ,SP , A16 ,
+pub enum LoadWordTarget {
+    BC,
+    DE,
+    HL,
+    SP,
+    A16,
 }
-pub enum LoadWordSource{
-    D16 , SPr8 , HL, SP
+pub enum LoadWordSource {
+    D16,
+    SPr8,
+    HL,
+    SP,
 }
-pub enum RSTTarget{
-    H00, H10, H20, H30 ,H08 ,H18 ,H28 ,H38,
+pub enum RSTTarget {
+    H00,
+    H10,
+    H20,
+    H30,
+    H08,
+    H18,
+    H28,
+    H38,
 }
-pub enum PrefixTarget{
-    B,C,D,E,H,L,HLV,A,
+pub enum PrefixTarget {
+    B,
+    C,
+    D,
+    E,
+    H,
+    L,
+    HLV,
+    A,
 }
 pub enum IncDecTarget {
     BC,
@@ -113,12 +134,26 @@ pub enum RLCTarget {
     HL,
 }
 
-pub enum BitManipulationType{
-    Bit(TargetBit,SourceRegister),
+pub enum BitManipulationType {
+    Bit(TargetBit, SourceRegister),
 }
-pub enum TargetBit{
-    B0 , B1 , B2 , B3 , B4 , B5 , B6 , B7 ,
+pub enum TargetBit {
+    B0,
+    B1,
+    B2,
+    B3,
+    B4,
+    B5,
+    B6,
+    B7,
 }
-pub enum SourceRegister{
-    A,B,C,D,E,H,L,HLV,
+pub enum SourceRegister {
+    A,
+    B,
+    C,
+    D,
+    E,
+    H,
+    L,
+    HLV,
 }

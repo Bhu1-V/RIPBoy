@@ -38,7 +38,7 @@ impl FlagsRegister {
         self.half_carry = false;
         self.subtract = false;
     }
-    
+
     pub fn toggle_carry(&mut self) {
         self.carry = !self.carry;
     }

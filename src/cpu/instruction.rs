@@ -1,6 +1,5 @@
 use super::target::*;
 pub enum Instruction {
-    
     ADD(ArthemeticTarget),
     INC(IncDecTarget),
     DEC(IncDecTarget),
@@ -39,9 +38,7 @@ pub enum Instruction {
 
     RST(RSTTarget),
 
-
     // Prefix Instructions
-
     RLC(PrefixTarget),
     RRC(PrefixTarget),
     RL(PrefixTarget),
@@ -148,247 +145,820 @@ impl Instruction {
             0x3F => Some(Instruction::SRL(PrefixTarget::A)),
 
             // BIT man 0
-            0x40 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B0 ,SourceRegister::B))),
-            0x41 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B0 ,SourceRegister::C))),
-            0x42 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B0 ,SourceRegister::D))),
-            0x43 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B0 ,SourceRegister::E))),
-            0x44 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B0 ,SourceRegister::H))),
-            0x45 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B0 ,SourceRegister::L))),
-            0x46 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B0 ,SourceRegister::HLV))),
-            0x47 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B0 ,SourceRegister::A))),
+            0x40 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B0,
+                SourceRegister::B,
+            ))),
+            0x41 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B0,
+                SourceRegister::C,
+            ))),
+            0x42 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B0,
+                SourceRegister::D,
+            ))),
+            0x43 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B0,
+                SourceRegister::E,
+            ))),
+            0x44 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B0,
+                SourceRegister::H,
+            ))),
+            0x45 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B0,
+                SourceRegister::L,
+            ))),
+            0x46 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B0,
+                SourceRegister::HLV,
+            ))),
+            0x47 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B0,
+                SourceRegister::A,
+            ))),
 
             // bit man 1
-            0x48 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B1 ,SourceRegister::B))),
-            0x49 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B1 ,SourceRegister::C))),
-            0x4A => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B1 ,SourceRegister::D))),
-            0x4B => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B1 ,SourceRegister::E))),
-            0x4C => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B1 ,SourceRegister::H))),
-            0x4D => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B1 ,SourceRegister::L))),
-            0x4E => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B1 ,SourceRegister::HLV))),
-            0x4F => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B1 ,SourceRegister::A))),
+            0x48 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B1,
+                SourceRegister::B,
+            ))),
+            0x49 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B1,
+                SourceRegister::C,
+            ))),
+            0x4A => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B1,
+                SourceRegister::D,
+            ))),
+            0x4B => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B1,
+                SourceRegister::E,
+            ))),
+            0x4C => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B1,
+                SourceRegister::H,
+            ))),
+            0x4D => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B1,
+                SourceRegister::L,
+            ))),
+            0x4E => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B1,
+                SourceRegister::HLV,
+            ))),
+            0x4F => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B1,
+                SourceRegister::A,
+            ))),
 
             // bit man 2
-            0x50 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B2 ,SourceRegister::B))),
-            0x51 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B2 ,SourceRegister::C))),
-            0x52 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B2 ,SourceRegister::D))),
-            0x53 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B2 ,SourceRegister::E))),
-            0x54 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B2 ,SourceRegister::H))),
-            0x55 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B2 ,SourceRegister::L))),
-            0x56 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B2 ,SourceRegister::HLV))),
-            0x57 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B2 ,SourceRegister::A))),
+            0x50 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B2,
+                SourceRegister::B,
+            ))),
+            0x51 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B2,
+                SourceRegister::C,
+            ))),
+            0x52 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B2,
+                SourceRegister::D,
+            ))),
+            0x53 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B2,
+                SourceRegister::E,
+            ))),
+            0x54 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B2,
+                SourceRegister::H,
+            ))),
+            0x55 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B2,
+                SourceRegister::L,
+            ))),
+            0x56 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B2,
+                SourceRegister::HLV,
+            ))),
+            0x57 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B2,
+                SourceRegister::A,
+            ))),
 
             // bit man 3
-            0x58 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B3 ,SourceRegister::B))),
-            0x59 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B3 ,SourceRegister::C))),
-            0x5A => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B3 ,SourceRegister::D))),
-            0x5B => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B3 ,SourceRegister::E))),
-            0x5C => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B3 ,SourceRegister::H))),
-            0x5D => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B3 ,SourceRegister::L))),
-            0x5E => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B3 ,SourceRegister::HLV))),
-            0x5F => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B3 ,SourceRegister::A))),
+            0x58 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B3,
+                SourceRegister::B,
+            ))),
+            0x59 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B3,
+                SourceRegister::C,
+            ))),
+            0x5A => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B3,
+                SourceRegister::D,
+            ))),
+            0x5B => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B3,
+                SourceRegister::E,
+            ))),
+            0x5C => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B3,
+                SourceRegister::H,
+            ))),
+            0x5D => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B3,
+                SourceRegister::L,
+            ))),
+            0x5E => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B3,
+                SourceRegister::HLV,
+            ))),
+            0x5F => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B3,
+                SourceRegister::A,
+            ))),
 
             // bit man 4
-            0x60 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B4 ,SourceRegister::B))),
-            0x61 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B4 ,SourceRegister::C))),
-            0x62 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B4 ,SourceRegister::D))),
-            0x63 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B4 ,SourceRegister::E))),
-            0x64 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B4 ,SourceRegister::H))),
-            0x65 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B4 ,SourceRegister::L))),
-            0x66 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B4 ,SourceRegister::HLV))),
-            0x67 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B4 ,SourceRegister::A))),
+            0x60 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B4,
+                SourceRegister::B,
+            ))),
+            0x61 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B4,
+                SourceRegister::C,
+            ))),
+            0x62 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B4,
+                SourceRegister::D,
+            ))),
+            0x63 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B4,
+                SourceRegister::E,
+            ))),
+            0x64 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B4,
+                SourceRegister::H,
+            ))),
+            0x65 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B4,
+                SourceRegister::L,
+            ))),
+            0x66 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B4,
+                SourceRegister::HLV,
+            ))),
+            0x67 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B4,
+                SourceRegister::A,
+            ))),
 
             // bit man 5
-            0x68 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B5 ,SourceRegister::B))),
-            0x69 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B5 ,SourceRegister::C))),
-            0x6A => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B5 ,SourceRegister::D))),
-            0x6B => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B5 ,SourceRegister::E))),
-            0x6C => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B5 ,SourceRegister::H))),
-            0x6D => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B5 ,SourceRegister::L))),
-            0x6E => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B5 ,SourceRegister::HLV))),
-            0x6F => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B5 ,SourceRegister::A))),
+            0x68 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B5,
+                SourceRegister::B,
+            ))),
+            0x69 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B5,
+                SourceRegister::C,
+            ))),
+            0x6A => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B5,
+                SourceRegister::D,
+            ))),
+            0x6B => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B5,
+                SourceRegister::E,
+            ))),
+            0x6C => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B5,
+                SourceRegister::H,
+            ))),
+            0x6D => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B5,
+                SourceRegister::L,
+            ))),
+            0x6E => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B5,
+                SourceRegister::HLV,
+            ))),
+            0x6F => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B5,
+                SourceRegister::A,
+            ))),
 
             // bit man 6
-            0x70 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B6 ,SourceRegister::B))),
-            0x71 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B6 ,SourceRegister::C))),
-            0x72 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B6 ,SourceRegister::D))),
-            0x73 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B6 ,SourceRegister::E))),
-            0x74 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B6 ,SourceRegister::H))),
-            0x75 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B6 ,SourceRegister::L))),
-            0x76 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B6 ,SourceRegister::HLV))),
-            0x77 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B6 ,SourceRegister::A))),
+            0x70 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B6,
+                SourceRegister::B,
+            ))),
+            0x71 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B6,
+                SourceRegister::C,
+            ))),
+            0x72 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B6,
+                SourceRegister::D,
+            ))),
+            0x73 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B6,
+                SourceRegister::E,
+            ))),
+            0x74 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B6,
+                SourceRegister::H,
+            ))),
+            0x75 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B6,
+                SourceRegister::L,
+            ))),
+            0x76 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B6,
+                SourceRegister::HLV,
+            ))),
+            0x77 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B6,
+                SourceRegister::A,
+            ))),
 
             // bit man 7
-            0x78 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B7 ,SourceRegister::B))),
-            0x79 => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B7 ,SourceRegister::C))),
-            0x7A => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B7 ,SourceRegister::D))),
-            0x7B => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B7 ,SourceRegister::E))),
-            0x7C => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B7 ,SourceRegister::H))),
-            0x7D => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B7 ,SourceRegister::L))),
-            0x7E => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B7 ,SourceRegister::HLV))),
-            0x7F => Some(Instruction::BIT(BitManipulationType::Bit(TargetBit::B7 ,SourceRegister::A))),
-
+            0x78 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B7,
+                SourceRegister::B,
+            ))),
+            0x79 => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B7,
+                SourceRegister::C,
+            ))),
+            0x7A => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B7,
+                SourceRegister::D,
+            ))),
+            0x7B => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B7,
+                SourceRegister::E,
+            ))),
+            0x7C => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B7,
+                SourceRegister::H,
+            ))),
+            0x7D => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B7,
+                SourceRegister::L,
+            ))),
+            0x7E => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B7,
+                SourceRegister::HLV,
+            ))),
+            0x7F => Some(Instruction::BIT(BitManipulationType::Bit(
+                TargetBit::B7,
+                SourceRegister::A,
+            ))),
 
             // RES man 0
-            0x80 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B0 ,SourceRegister::B))),
-            0x81 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B0 ,SourceRegister::C))),
-            0x82 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B0 ,SourceRegister::D))),
-            0x83 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B0 ,SourceRegister::E))),
-            0x84 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B0 ,SourceRegister::H))),
-            0x85 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B0 ,SourceRegister::L))),
-            0x86 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B0 ,SourceRegister::HLV))),
-            0x87 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B0 ,SourceRegister::A))),
+            0x80 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B0,
+                SourceRegister::B,
+            ))),
+            0x81 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B0,
+                SourceRegister::C,
+            ))),
+            0x82 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B0,
+                SourceRegister::D,
+            ))),
+            0x83 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B0,
+                SourceRegister::E,
+            ))),
+            0x84 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B0,
+                SourceRegister::H,
+            ))),
+            0x85 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B0,
+                SourceRegister::L,
+            ))),
+            0x86 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B0,
+                SourceRegister::HLV,
+            ))),
+            0x87 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B0,
+                SourceRegister::A,
+            ))),
 
             // res man 1
-            0x88 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B1 ,SourceRegister::B))),
-            0x89 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B1 ,SourceRegister::C))),
-            0x8A => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B1 ,SourceRegister::D))),
-            0x8B => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B1 ,SourceRegister::E))),
-            0x8C => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B1 ,SourceRegister::H))),
-            0x8D => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B1 ,SourceRegister::L))),
-            0x8E => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B1 ,SourceRegister::HLV))),
-            0x8F => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B1 ,SourceRegister::A))),
+            0x88 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B1,
+                SourceRegister::B,
+            ))),
+            0x89 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B1,
+                SourceRegister::C,
+            ))),
+            0x8A => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B1,
+                SourceRegister::D,
+            ))),
+            0x8B => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B1,
+                SourceRegister::E,
+            ))),
+            0x8C => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B1,
+                SourceRegister::H,
+            ))),
+            0x8D => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B1,
+                SourceRegister::L,
+            ))),
+            0x8E => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B1,
+                SourceRegister::HLV,
+            ))),
+            0x8F => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B1,
+                SourceRegister::A,
+            ))),
 
             // res man 2
-            0x90 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B2 ,SourceRegister::B))),
-            0x91 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B2 ,SourceRegister::C))),
-            0x92 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B2 ,SourceRegister::D))),
-            0x93 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B2 ,SourceRegister::E))),
-            0x94 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B2 ,SourceRegister::H))),
-            0x95 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B2 ,SourceRegister::L))),
-            0x96 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B2 ,SourceRegister::HLV))),
-            0x97 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B2 ,SourceRegister::A))),
+            0x90 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B2,
+                SourceRegister::B,
+            ))),
+            0x91 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B2,
+                SourceRegister::C,
+            ))),
+            0x92 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B2,
+                SourceRegister::D,
+            ))),
+            0x93 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B2,
+                SourceRegister::E,
+            ))),
+            0x94 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B2,
+                SourceRegister::H,
+            ))),
+            0x95 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B2,
+                SourceRegister::L,
+            ))),
+            0x96 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B2,
+                SourceRegister::HLV,
+            ))),
+            0x97 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B2,
+                SourceRegister::A,
+            ))),
 
             // res man 3
-            0x98 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B3 ,SourceRegister::B))),
-            0x99 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B3 ,SourceRegister::C))),
-            0x9A => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B3 ,SourceRegister::D))),
-            0x9B => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B3 ,SourceRegister::E))),
-            0x9C => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B3 ,SourceRegister::H))),
-            0x9D => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B3 ,SourceRegister::L))),
-            0x9E => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B3 ,SourceRegister::HLV))),
-            0x9F => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B3 ,SourceRegister::A))),
+            0x98 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B3,
+                SourceRegister::B,
+            ))),
+            0x99 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B3,
+                SourceRegister::C,
+            ))),
+            0x9A => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B3,
+                SourceRegister::D,
+            ))),
+            0x9B => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B3,
+                SourceRegister::E,
+            ))),
+            0x9C => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B3,
+                SourceRegister::H,
+            ))),
+            0x9D => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B3,
+                SourceRegister::L,
+            ))),
+            0x9E => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B3,
+                SourceRegister::HLV,
+            ))),
+            0x9F => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B3,
+                SourceRegister::A,
+            ))),
 
             // res man 4
-            0xA0 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B4 ,SourceRegister::B))),
-            0xA1 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B4 ,SourceRegister::C))),
-            0xA2 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B4 ,SourceRegister::D))),
-            0xA3 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B4 ,SourceRegister::E))),
-            0xA4 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B4 ,SourceRegister::H))),
-            0xA5 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B4 ,SourceRegister::L))),
-            0xA6 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B4 ,SourceRegister::HLV))),
-            0xA7 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B4 ,SourceRegister::A))),
+            0xA0 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B4,
+                SourceRegister::B,
+            ))),
+            0xA1 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B4,
+                SourceRegister::C,
+            ))),
+            0xA2 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B4,
+                SourceRegister::D,
+            ))),
+            0xA3 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B4,
+                SourceRegister::E,
+            ))),
+            0xA4 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B4,
+                SourceRegister::H,
+            ))),
+            0xA5 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B4,
+                SourceRegister::L,
+            ))),
+            0xA6 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B4,
+                SourceRegister::HLV,
+            ))),
+            0xA7 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B4,
+                SourceRegister::A,
+            ))),
 
             // res man 5
-            0xA8 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B5 ,SourceRegister::B))),
-            0xA9 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B5 ,SourceRegister::C))),
-            0xAA => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B5 ,SourceRegister::D))),
-            0xAB => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B5 ,SourceRegister::E))),
-            0xAC => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B5 ,SourceRegister::H))),
-            0xAD => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B5 ,SourceRegister::L))),
-            0xAE => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B5 ,SourceRegister::HLV))),
-            0xAF => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B5 ,SourceRegister::A))),
+            0xA8 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B5,
+                SourceRegister::B,
+            ))),
+            0xA9 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B5,
+                SourceRegister::C,
+            ))),
+            0xAA => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B5,
+                SourceRegister::D,
+            ))),
+            0xAB => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B5,
+                SourceRegister::E,
+            ))),
+            0xAC => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B5,
+                SourceRegister::H,
+            ))),
+            0xAD => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B5,
+                SourceRegister::L,
+            ))),
+            0xAE => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B5,
+                SourceRegister::HLV,
+            ))),
+            0xAF => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B5,
+                SourceRegister::A,
+            ))),
 
             // res man 6
-            0xB0 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B6 ,SourceRegister::B))),
-            0xB1 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B6 ,SourceRegister::C))),
-            0xB2 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B6 ,SourceRegister::D))),
-            0xB3 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B6 ,SourceRegister::E))),
-            0xB4 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B6 ,SourceRegister::H))),
-            0xB5 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B6 ,SourceRegister::L))),
-            0xB6 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B6 ,SourceRegister::HLV))),
-            0xB7 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B6 ,SourceRegister::A))),
+            0xB0 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B6,
+                SourceRegister::B,
+            ))),
+            0xB1 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B6,
+                SourceRegister::C,
+            ))),
+            0xB2 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B6,
+                SourceRegister::D,
+            ))),
+            0xB3 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B6,
+                SourceRegister::E,
+            ))),
+            0xB4 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B6,
+                SourceRegister::H,
+            ))),
+            0xB5 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B6,
+                SourceRegister::L,
+            ))),
+            0xB6 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B6,
+                SourceRegister::HLV,
+            ))),
+            0xB7 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B6,
+                SourceRegister::A,
+            ))),
 
             // res man 7
-            0xB8 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B7 ,SourceRegister::B))),
-            0xB9 => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B7 ,SourceRegister::C))),
-            0xBA => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B7 ,SourceRegister::D))),
-            0xBB => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B7 ,SourceRegister::E))),
-            0xBC => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B7 ,SourceRegister::H))),
-            0xBD => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B7 ,SourceRegister::L))),
-            0xBE => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B7 ,SourceRegister::HLV))),
-            0xBF => Some(Instruction::RES(BitManipulationType::Bit(TargetBit::B7 ,SourceRegister::A))),
+            0xB8 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B7,
+                SourceRegister::B,
+            ))),
+            0xB9 => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B7,
+                SourceRegister::C,
+            ))),
+            0xBA => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B7,
+                SourceRegister::D,
+            ))),
+            0xBB => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B7,
+                SourceRegister::E,
+            ))),
+            0xBC => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B7,
+                SourceRegister::H,
+            ))),
+            0xBD => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B7,
+                SourceRegister::L,
+            ))),
+            0xBE => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B7,
+                SourceRegister::HLV,
+            ))),
+            0xBF => Some(Instruction::RES(BitManipulationType::Bit(
+                TargetBit::B7,
+                SourceRegister::A,
+            ))),
 
             // set man 0
-            0xC0 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B0 ,SourceRegister::B))),
-            0xC1 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B0 ,SourceRegister::C))),
-            0xC2 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B0 ,SourceRegister::D))),
-            0xC3 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B0 ,SourceRegister::E))),
-            0xC4 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B0 ,SourceRegister::H))),
-            0xC5 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B0 ,SourceRegister::L))),
-            0xC6 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B0 ,SourceRegister::HLV))),
-            0xC7 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B0 ,SourceRegister::A))),
+            0xC0 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B0,
+                SourceRegister::B,
+            ))),
+            0xC1 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B0,
+                SourceRegister::C,
+            ))),
+            0xC2 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B0,
+                SourceRegister::D,
+            ))),
+            0xC3 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B0,
+                SourceRegister::E,
+            ))),
+            0xC4 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B0,
+                SourceRegister::H,
+            ))),
+            0xC5 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B0,
+                SourceRegister::L,
+            ))),
+            0xC6 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B0,
+                SourceRegister::HLV,
+            ))),
+            0xC7 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B0,
+                SourceRegister::A,
+            ))),
 
             // set man 1
-            0xC8 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B1 ,SourceRegister::B))),
-            0xC9 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B1 ,SourceRegister::C))),
-            0xCA => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B1 ,SourceRegister::D))),
-            0xCB => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B1 ,SourceRegister::E))),
-            0xCC => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B1 ,SourceRegister::H))),
-            0xCD => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B1 ,SourceRegister::L))),
-            0xCE => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B1 ,SourceRegister::HLV))),
-            0xCF => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B1 ,SourceRegister::A))),
+            0xC8 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B1,
+                SourceRegister::B,
+            ))),
+            0xC9 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B1,
+                SourceRegister::C,
+            ))),
+            0xCA => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B1,
+                SourceRegister::D,
+            ))),
+            0xCB => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B1,
+                SourceRegister::E,
+            ))),
+            0xCC => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B1,
+                SourceRegister::H,
+            ))),
+            0xCD => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B1,
+                SourceRegister::L,
+            ))),
+            0xCE => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B1,
+                SourceRegister::HLV,
+            ))),
+            0xCF => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B1,
+                SourceRegister::A,
+            ))),
 
             // set man 2
-            0xD0 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B2 ,SourceRegister::B))),
-            0xD1 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B2 ,SourceRegister::C))),
-            0xD2 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B2 ,SourceRegister::D))),
-            0xD3 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B2 ,SourceRegister::E))),
-            0xD4 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B2 ,SourceRegister::H))),
-            0xD5 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B2 ,SourceRegister::L))),
-            0xD6 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B2 ,SourceRegister::HLV))),
-            0xD7 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B2 ,SourceRegister::A))),
+            0xD0 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B2,
+                SourceRegister::B,
+            ))),
+            0xD1 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B2,
+                SourceRegister::C,
+            ))),
+            0xD2 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B2,
+                SourceRegister::D,
+            ))),
+            0xD3 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B2,
+                SourceRegister::E,
+            ))),
+            0xD4 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B2,
+                SourceRegister::H,
+            ))),
+            0xD5 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B2,
+                SourceRegister::L,
+            ))),
+            0xD6 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B2,
+                SourceRegister::HLV,
+            ))),
+            0xD7 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B2,
+                SourceRegister::A,
+            ))),
 
             // set man 3
-            0xD8 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B3 ,SourceRegister::B))),
-            0xD9 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B3 ,SourceRegister::C))),
-            0xDA => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B3 ,SourceRegister::D))),
-            0xDB => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B3 ,SourceRegister::E))),
-            0xDC => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B3 ,SourceRegister::H))),
-            0xDD => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B3 ,SourceRegister::L))),
-            0xDE => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B3 ,SourceRegister::HLV))),
-            0xDF => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B3 ,SourceRegister::A))),
+            0xD8 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B3,
+                SourceRegister::B,
+            ))),
+            0xD9 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B3,
+                SourceRegister::C,
+            ))),
+            0xDA => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B3,
+                SourceRegister::D,
+            ))),
+            0xDB => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B3,
+                SourceRegister::E,
+            ))),
+            0xDC => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B3,
+                SourceRegister::H,
+            ))),
+            0xDD => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B3,
+                SourceRegister::L,
+            ))),
+            0xDE => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B3,
+                SourceRegister::HLV,
+            ))),
+            0xDF => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B3,
+                SourceRegister::A,
+            ))),
 
             // set man 4
-            0xE0 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B4 ,SourceRegister::B))),
-            0xE1 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B4 ,SourceRegister::C))),
-            0xE2 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B4 ,SourceRegister::D))),
-            0xE3 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B4 ,SourceRegister::E))),
-            0xE4 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B4 ,SourceRegister::H))),
-            0xE5 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B4 ,SourceRegister::L))),
-            0xE6 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B4 ,SourceRegister::HLV))),
-            0xE7 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B4 ,SourceRegister::A))),
+            0xE0 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B4,
+                SourceRegister::B,
+            ))),
+            0xE1 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B4,
+                SourceRegister::C,
+            ))),
+            0xE2 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B4,
+                SourceRegister::D,
+            ))),
+            0xE3 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B4,
+                SourceRegister::E,
+            ))),
+            0xE4 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B4,
+                SourceRegister::H,
+            ))),
+            0xE5 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B4,
+                SourceRegister::L,
+            ))),
+            0xE6 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B4,
+                SourceRegister::HLV,
+            ))),
+            0xE7 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B4,
+                SourceRegister::A,
+            ))),
 
             // set man 5
-            0xE8 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B5 ,SourceRegister::B))),
-            0xE9 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B5 ,SourceRegister::C))),
-            0xEA => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B5 ,SourceRegister::D))),
-            0xEB => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B5 ,SourceRegister::E))),
-            0xEC => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B5 ,SourceRegister::H))),
-            0xED => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B5 ,SourceRegister::L))),
-            0xEE => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B5 ,SourceRegister::HLV))),
-            0xEF => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B5 ,SourceRegister::A))),
+            0xE8 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B5,
+                SourceRegister::B,
+            ))),
+            0xE9 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B5,
+                SourceRegister::C,
+            ))),
+            0xEA => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B5,
+                SourceRegister::D,
+            ))),
+            0xEB => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B5,
+                SourceRegister::E,
+            ))),
+            0xEC => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B5,
+                SourceRegister::H,
+            ))),
+            0xED => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B5,
+                SourceRegister::L,
+            ))),
+            0xEE => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B5,
+                SourceRegister::HLV,
+            ))),
+            0xEF => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B5,
+                SourceRegister::A,
+            ))),
 
             // set man 6
-            0xF0 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B6 ,SourceRegister::B))),
-            0xF1 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B6 ,SourceRegister::C))),
-            0xF2 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B6 ,SourceRegister::D))),
-            0xF3 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B6 ,SourceRegister::E))),
-            0xF4 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B6 ,SourceRegister::H))),
-            0xF5 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B6 ,SourceRegister::L))),
-            0xF6 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B6 ,SourceRegister::HLV))),
-            0xF7 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B6 ,SourceRegister::A))),
+            0xF0 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B6,
+                SourceRegister::B,
+            ))),
+            0xF1 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B6,
+                SourceRegister::C,
+            ))),
+            0xF2 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B6,
+                SourceRegister::D,
+            ))),
+            0xF3 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B6,
+                SourceRegister::E,
+            ))),
+            0xF4 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B6,
+                SourceRegister::H,
+            ))),
+            0xF5 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B6,
+                SourceRegister::L,
+            ))),
+            0xF6 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B6,
+                SourceRegister::HLV,
+            ))),
+            0xF7 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B6,
+                SourceRegister::A,
+            ))),
 
             // set man 7
-            0xF8 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B7 ,SourceRegister::B))),
-            0xF9 => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B7 ,SourceRegister::C))),
-            0xFA => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B7 ,SourceRegister::D))),
-            0xFB => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B7 ,SourceRegister::E))),
-            0xFC => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B7 ,SourceRegister::H))),
-            0xFD => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B7 ,SourceRegister::L))),
-            0xFE => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B7 ,SourceRegister::HLV))),
-            0xFF => Some(Instruction::SET(BitManipulationType::Bit(TargetBit::B7 ,SourceRegister::A))),
-
-
+            0xF8 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B7,
+                SourceRegister::B,
+            ))),
+            0xF9 => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B7,
+                SourceRegister::C,
+            ))),
+            0xFA => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B7,
+                SourceRegister::D,
+            ))),
+            0xFB => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B7,
+                SourceRegister::E,
+            ))),
+            0xFC => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B7,
+                SourceRegister::H,
+            ))),
+            0xFD => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B7,
+                SourceRegister::L,
+            ))),
+            0xFE => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B7,
+                SourceRegister::HLV,
+            ))),
+            0xFF => Some(Instruction::SET(BitManipulationType::Bit(
+                TargetBit::B7,
+                SourceRegister::A,
+            ))),
 
             _ => None,
         }
@@ -917,7 +1487,6 @@ impl Instruction {
             0x27 => Some(Instruction::DAA),
 
             // 16-bit load INSTRUCTIONS
-
             0xC1 => Some(Instruction::POP(StackTarget::BC)),
             0xD1 => Some(Instruction::POP(StackTarget::DE)),
             0xE1 => Some(Instruction::POP(StackTarget::HL)),
@@ -928,8 +1497,6 @@ impl Instruction {
             0xE5 => Some(Instruction::PUSH(StackTarget::HL)),
             0xF5 => Some(Instruction::PUSH(StackTarget::AF)),
 
-            
-
             // more call instructions
             0xC4 => Some(Instruction::CALL(JumpTest::NotZero)),
             0xD4 => Some(Instruction::CALL(JumpTest::NotCarry)),
@@ -938,22 +1505,42 @@ impl Instruction {
             0xCD => Some(Instruction::CALL(JumpTest::Always)),
 
             // LAST 20 Instr.
-
             0x20 => Some(Instruction::JR(JumpTest::NotZero)),
             0x30 => Some(Instruction::JR(JumpTest::NotCarry)),
             0x28 => Some(Instruction::JR(JumpTest::Zero)),
             0x38 => Some(Instruction::JR(JumpTest::Carry)),
             0x18 => Some(Instruction::JR(JumpTest::Always)),
 
-                // more 16 bit load instructions
-            0x01 => Some(Instruction::LD2(LoadType::Word(LoadWordTarget::BC,LoadWordSource::D16))),
-            0x11 => Some(Instruction::LD2(LoadType::Word(LoadWordTarget::DE,LoadWordSource::D16))),
-            0x21 => Some(Instruction::LD2(LoadType::Word(LoadWordTarget::HL,LoadWordSource::D16))),
-            0x31 => Some(Instruction::LD2(LoadType::Word(LoadWordTarget::SP,LoadWordSource::D16))),
-            0x08 => Some(Instruction::LD2(LoadType::Word(LoadWordTarget::A16,LoadWordSource::SP))),
+            // more 16 bit load instructions
+            0x01 => Some(Instruction::LD2(LoadType::Word(
+                LoadWordTarget::BC,
+                LoadWordSource::D16,
+            ))),
+            0x11 => Some(Instruction::LD2(LoadType::Word(
+                LoadWordTarget::DE,
+                LoadWordSource::D16,
+            ))),
+            0x21 => Some(Instruction::LD2(LoadType::Word(
+                LoadWordTarget::HL,
+                LoadWordSource::D16,
+            ))),
+            0x31 => Some(Instruction::LD2(LoadType::Word(
+                LoadWordTarget::SP,
+                LoadWordSource::D16,
+            ))),
+            0x08 => Some(Instruction::LD2(LoadType::Word(
+                LoadWordTarget::A16,
+                LoadWordSource::SP,
+            ))),
 
-            0xF8 => Some(Instruction::LD2(LoadType::Word(LoadWordTarget::HL,LoadWordSource::SPr8))),
-            0xF9 => Some(Instruction::LD2(LoadType::Word(LoadWordTarget::SP,LoadWordSource::HL))),
+            0xF8 => Some(Instruction::LD2(LoadType::Word(
+                LoadWordTarget::HL,
+                LoadWordSource::SPr8,
+            ))),
+            0xF9 => Some(Instruction::LD2(LoadType::Word(
+                LoadWordTarget::SP,
+                LoadWordSource::HL,
+            ))),
 
             // RST Instructions
             0xC7 => Some(Instruction::RST(RSTTarget::H00)),
@@ -965,7 +1552,6 @@ impl Instruction {
             0xDF => Some(Instruction::RST(RSTTarget::H18)),
             0xEF => Some(Instruction::RST(RSTTarget::H28)),
             0xFF => Some(Instruction::RST(RSTTarget::H38)),
-
 
             _ => None,
         }

@@ -1,25 +1,33 @@
 pub mod tile_pixel_value;
 
-use tile_pixel_value::TilePixelValue;
 use crate::cpu::memory_map::*;
+use tile_pixel_value::TilePixelValue;
 
 type Tile = [[TilePixelValue; 8]; 8];
 
 pub fn empty_tile() -> Tile {
     [[TilePixelValue::Zero; 8]; 8]
 }
-
 pub struct GPU {
     pub vram: [u8; VRAM_SIZE],
     pub tile_set: [Tile; 384],
-    _modeclock : u16,
-    _mode : u8,
-    _line : u8,
+    _modeclock: u16,
+    _mode: u8,
+    _line: u8,
+
+    buffer: [u8; 160 * 144],
 }
 
 impl GPU {
+    pub fn reset(&mut self) {
+        self.buffer = [0; 160 * 144];
 
-    pub fn step(&mut self,cpu_clock:u16){
+        for i in 0..(160 * 144) {
+            self.buffer[i] = 0;
+        }
+    }
+
+    pub fn step(&mut self, cpu_clock: u16) {
         self._modeclock += cpu_clock;
 
         match self._mode {
@@ -34,7 +42,6 @@ impl GPU {
             // VRAM read mode, Scan_Line Active
             3 => {
                 if self._modeclock >= 172 {
-
                     // enter h_blank mode
                     self._modeclock = 0;
                     self._mode = 0;
@@ -46,15 +53,14 @@ impl GPU {
 
             0 => {
                 if self._modeclock >= 204 {
-
                     self._modeclock = 0;
                     self._line += 1;
 
                     if self._line == 143 {
                         // enter v-blank mode
                         self._mode = 1;
-                        // todo add gpu screen to frame buffer for display.
-                    }else {
+                    // todo add gpu screen to frame buffer for display.
+                    } else {
                         self._mode = 2;
                     }
                 }
@@ -76,9 +82,7 @@ impl GPU {
         }
     }
 
-    fn render_scan(&self){
-
-    }
+    fn render_scan(&self) {}
 
     pub fn read_vram(&self, address: usize) -> u8 {
         self.vram[address]

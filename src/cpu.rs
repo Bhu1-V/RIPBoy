@@ -4,6 +4,7 @@ use instruction::Instruction;
 use memory_bus::MemoryBus;
 use registers::Registers;
 use target::*;
+use timer::*;
 
 pub mod clock;
 pub mod flags_register;
@@ -1837,6 +1838,32 @@ impl CPU {
         self.registers.f = FlagsRegister::from(self._rsv.f.con() as u8);
         self.registers.h = self._rsv.h;
         self.registers.l = self._rsv.l;
+    }
+
+    fn request_interupt(&self, i: u8) {
+        // todo implement Inturupt.
+    }
+
+    fn update_timers(&mut self, cycles: u32) {
+        self.bus.do_divider_register(cycles);
+
+        if self.bus.clock_enabled() {
+            self.bus.mem_timer_counter -= cycles;
+
+            if self.bus.mem_timer_counter <= 0 {
+                self.bus.set_clock_freq();
+
+                // overflow
+                if self.bus.read_byte(TIMA as u16) == 255 {
+                    let tma_val = self.bus.read_byte(TMA as u16);
+                    self.bus.write_bytes(TIMA as u16, tma_val);
+                    self.request_interupt(2);
+                } else {
+                    let tma_val = self.bus.read_byte(TIMA as u16);
+                    self.bus.write_bytes(TIMA as u16, tma_val + 1);
+                }
+            }
+        }
     }
 }
 

@@ -25,6 +25,7 @@ pub struct MemoryBus {
 
     pub memory: [u8; 0xFFFF],
     pub gpu: GPU,
+    pub interupt_master:bool,
 
     pub mem_timer_counter: u32,
     pub divider_register : u8,

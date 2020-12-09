@@ -1840,7 +1840,7 @@ impl CPU {
         self.registers.l = self._rsv.l;
     }
 
-    fn bit_set(mut i: u8 , b: u8) -> u8{
+    fn bit_set(mut i: u8, b: u8) -> u8 {
         i = match b {
             0 => i | 0b_0000_0001,
             1 => i | 0b_0000_0010,
@@ -1855,7 +1855,7 @@ impl CPU {
         i
     }
 
-    fn bit_reset(mut i: u8 , b: u8) -> u8{
+    fn bit_reset(mut i: u8, b: u8) -> u8 {
         i = match b {
             0 => i & 0b_1111_1110,
             1 => i & 0b_1111_1101,
@@ -1872,8 +1872,8 @@ impl CPU {
 
     pub fn request_interupt(&mut self, i: u8) {
         // todo implement Inturupt.
-        let mut req =self.bus.read_byte(0xFF0F);
-        req = CPU::bit_set(req,i);
+        let mut req = self.bus.read_byte(0xFF0F);
+        req = CPU::bit_set(req, i);
         self.bus.write_bytes(0xFF0F, req);
     }
 
@@ -1899,21 +1899,69 @@ impl CPU {
         }
     }
 
-    fn test_bit(i:u8 , b:u8 ) -> bool {
+    fn test_bit(i: u8, b: u8) -> bool {
         match b {
-            0 => if (i & 1) == 1 {true} else {false}
-            1 => if ((i>>1) & 1) == 1 {true} else {false}
-            2 => if ((i>>2) & 1) == 1 {true} else {false}
-            3 => if ((i>>3) & 1) == 1 {true} else {false}
-            4 => if ((i>>4) & 1) == 1 {true} else {false}
-            5 => if ((i>>5) & 1) == 1 {true} else {false}
-            6 => if ((i>>6) & 1) == 1 {true} else {false}
-            7 => if ((i>>7) & 1) == 1 {true} else {false}
+            0 => {
+                if (i & 1) == 1 {
+                    true
+                } else {
+                    false
+                }
+            }
+            1 => {
+                if ((i >> 1) & 1) == 1 {
+                    true
+                } else {
+                    false
+                }
+            }
+            2 => {
+                if ((i >> 2) & 1) == 1 {
+                    true
+                } else {
+                    false
+                }
+            }
+            3 => {
+                if ((i >> 3) & 1) == 1 {
+                    true
+                } else {
+                    false
+                }
+            }
+            4 => {
+                if ((i >> 4) & 1) == 1 {
+                    true
+                } else {
+                    false
+                }
+            }
+            5 => {
+                if ((i >> 5) & 1) == 1 {
+                    true
+                } else {
+                    false
+                }
+            }
+            6 => {
+                if ((i >> 6) & 1) == 1 {
+                    true
+                } else {
+                    false
+                }
+            }
+            7 => {
+                if ((i >> 7) & 1) == 1 {
+                    true
+                } else {
+                    false
+                }
+            }
             _ => panic!("Unhandled test_bit case"),
         }
     }
 
-    pub fn do_interupts(&mut self){
+    pub fn do_interupts(&mut self) {
         if self.bus.interupt_master == true {
             let req = self.bus.read_byte(0xFF0F);
             let enabled = self.bus.read_byte(0xFFFF);
@@ -1930,9 +1978,9 @@ impl CPU {
         }
     }
 
-    pub fn service_interupt(&mut self,i:u8) {
+    pub fn service_interupt(&mut self, i: u8) {
         self.bus.interupt_master = false;
-        let mut  req = self.bus.read_byte(0xFF0F);
+        let mut req = self.bus.read_byte(0xFF0F);
         req = CPU::bit_reset(req, i);
         self.bus.write_bytes(0xFF0F, req);
 

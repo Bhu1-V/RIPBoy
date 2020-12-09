@@ -25,10 +25,10 @@ pub struct MemoryBus {
 
     pub memory: [u8; 0xFFFF],
     pub gpu: GPU,
-    pub interupt_master:bool,
+    pub interupt_master: bool,
 
     pub mem_timer_counter: u32,
-    pub divider_register : u8,
+    pub divider_register: u8,
 }
 
 impl fmt::Debug for MemoryBus {
@@ -248,8 +248,8 @@ impl MemoryBus {
         }
     }
 
-    fn new(){
-        
+    fn new() {
+
         // set_clock_freq();
     }
 
@@ -257,30 +257,33 @@ impl MemoryBus {
         let freq = self.get_clock_freq();
         match freq {
             1 => self.mem_timer_counter = 1024, // freq 4096
-            2 => self.mem_timer_counter = 16, // freq 262144
-            3 => self.mem_timer_counter = 64, // freq 65536
-            4 => self.mem_timer_counter = 256, // freq 16382
+            2 => self.mem_timer_counter = 16,   // freq 262144
+            3 => self.mem_timer_counter = 64,   // freq 65536
+            4 => self.mem_timer_counter = 256,  // freq 16382
             _ => panic!("Unhandled set_freq arm"),
         }
     }
 
     pub fn clock_enabled(&mut self) -> bool {
-        if ((self.read_byte(0xff07) >> 2) & 1) == 1 {true} else {false}
+        if ((self.read_byte(0xff07) >> 2) & 1) == 1 {
+            true
+        } else {
+            false
+        }
     }
 
     pub fn do_divider_register(&mut self, cycles: u32) {
-        let (new , overflowed) = self.divider_register.overflowing_add(cycles as u8);
+        let (new, overflowed) = self.divider_register.overflowing_add(cycles as u8);
 
         if overflowed {
             self.divider_register = 0;
             self.memory[0xff04] += 1;
-        }else {
+        } else {
             self.divider_register = new;
         }
     }
-    
+
     pub fn get_clock_freq(&mut self) -> u8 {
         self.read_byte(0xFF07) & 0x3
     }
 }
-

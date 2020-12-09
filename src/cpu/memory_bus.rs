@@ -1,7 +1,10 @@
 use std::fmt;
 
 use super::memory_map::*;
+
 use crate::gpu::*;
+
+use super::CPU;
 
 pub const MAX_CATRIDGE_SIZE: usize = 0x200000;
 pub struct MemoryBus {
@@ -25,9 +28,6 @@ pub struct MemoryBus {
 
     pub memory: [u8; 0xFFFF],
     pub gpu: GPU,
-
-    pub mem_timer_counter: u32,
-    pub divider_register : u8,
 }
 
 impl fmt::Debug for MemoryBus {
@@ -222,20 +222,6 @@ impl MemoryBus {
                 //self.gpu.read_vram(address - VRAM_BEGIN);
             }
 
-            0xFF04 => {
-                self.memory[address] = 0;
-            }
-
-            0xFF07 => {
-                let current_freq = self.get_clock_freq();
-                self.memory[address] = value;
-                let new_freq = self.get_clock_freq();
-
-                if current_freq != new_freq {
-                    self.set_clock_freq();
-                }
-            }
-
             ZRAM_BEGIN..=ZRAM_END => {
                 self.memory[address - ZRAM_BEGIN] = value;
             }
@@ -246,40 +232,4 @@ impl MemoryBus {
             }
         }
     }
-
-    fn new(){
-        
-        // set_clock_freq();
-    }
-
-    pub fn set_clock_freq(&mut self) {
-        let freq = self.get_clock_freq();
-        match freq {
-            1 => self.mem_timer_counter = 1024, // freq 4096
-            2 => self.mem_timer_counter = 16, // freq 262144
-            3 => self.mem_timer_counter = 64, // freq 65536
-            4 => self.mem_timer_counter = 256, // freq 16382
-            _ => panic!("Unhandled set_freq arm"),
-        }
-    }
-
-    pub fn clock_enabled(&mut self) -> bool {
-        if ((self.read_byte(0xff07) >> 2) & 1) == 1 {true} else {false}
-    }
-
-    pub fn do_divider_register(&mut self, cycles: u32) {
-        let (new , overflowed) = self.divider_register.overflowing_add(cycles as u8);
-
-        if overflowed {
-            self.divider_register = 0;
-            self.memory[0xff04] += 1;
-        }else {
-            self.divider_register = new;
-        }
-    }
-    
-    pub fn get_clock_freq(&mut self) -> u8 {
-        self.read_byte(0xFF07) & 0x3
-    }
 }
-

@@ -217,12 +217,12 @@ impl MemoryBus {
             }
 
             WORKING_RAM_BEGIN..=WORKING_RAM_END | W_SHADOW_RAM_BEGIN..=W_SHADOW_RAM_END => {
-                self.memory[address - WORKING_RAM_BEGIN] = value;
+                self.memory[address] = value;
+                self.memory[address-0x2000] = value;
             }
 
             SPRITE_RAM_BEGIN..=SPRITE_RAM_END => {
-                // HANDLE CORRECTLY.
-                //self.gpu.read_vram(address - VRAM_BEGIN);
+                self.memory[address] = value;
             }
 
             0xFF04 => {
@@ -243,6 +243,10 @@ impl MemoryBus {
                 self.memory[address] = 0;
             }
 
+            0xFF46 => {
+                self.do_dma_transfer(value);
+            }
+
             ZRAM_BEGIN..=ZRAM_END => {
                 self.memory[address - ZRAM_BEGIN] = value;
             }
@@ -257,6 +261,15 @@ impl MemoryBus {
     fn new() {
 
         // set_clock_freq();
+    }
+
+    pub fn do_dma_transfer(&mut self,value : u8) {
+        let address = (value as u16) << 8;
+
+        for i in 0..0xA0 {
+            let v = self.read_byte(address + i);
+            self.write_bytes(0xFE00 + i , v);
+        }
     }
 
     pub fn set_clock_freq(&mut self) {

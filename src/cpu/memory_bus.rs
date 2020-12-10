@@ -29,6 +29,8 @@ pub struct MemoryBus {
 
     pub mem_timer_counter: u32,
     pub divider_register: u8,
+
+    pub scan_line_counter : u32,
 }
 
 impl fmt::Debug for MemoryBus {
@@ -235,6 +237,10 @@ impl MemoryBus {
                 if current_freq != new_freq {
                     self.set_clock_freq();
                 }
+            }
+
+            0xFF44 => {
+                self.memory[address] = 0;
             }
 
             ZRAM_BEGIN..=ZRAM_END => {

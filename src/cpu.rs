@@ -1994,6 +1994,101 @@ impl CPU {
             _ => panic!("unhandled.. interupt bit"),
         }
     }
+
+    pub fn set_lcd_status(&mut self){
+        let mut status = self.bus.read_byte(0xff41);
+
+        if !self.is_lcd_enabled() {
+            self.bus.scan_line_counter = 456;
+            self.bus.memory[0xFF44] = 0;
+            status &= 252;
+            status = CPU::bit_set(status, 0);
+            self.bus.write_bytes(0xFF41, status);
+            return;
+        }
+
+        let mut current_line = self.bus.read_byte(0xFF44);
+        let mut current_mode = status & 0x3;
+
+        let mut mode = 0u8;
+        let mut reqInt = false;
+
+        if current_line >= 144 {
+            mode = 1;
+            status = CPU::bit_set(status, 0);
+            status = CPU::bit_set(status,1);
+            reqInt = CPU::test_bit(status,4);
+        }else {
+            let mode_2_bounds = 456 -80;
+            let mode_3_bounds = mode_2_bounds - 172;
+
+            // mode 2
+            if self.bus.scan_line_counter >= mode_2_bounds {
+                mode = 2;
+                status = CPU::bit_set(status, 1);
+                status = CPU::bit_reset(status, 0);
+                reqInt = CPU::test_bit(status,5);
+            } 
+
+            // mode 3
+            else if self.bus.scan_line_counter >= mode_3_bounds {
+                mode = 3;
+                status = CPU::bit_set(status, 1);
+                status = CPU::bit_set(status, 0);
+            }else {
+                mode = 0;
+                status = CPU::bit_reset(status, 1);
+                status = CPU::bit_reset(status, 0);
+                reqInt = CPU::test_bit(status, 3);
+            }
+        }
+
+        if reqInt && (mode != current_mode) {
+            self.request_interupt(1);
+        }
+
+        if current_line == self.bus.read_byte(0xFF45) {
+            status = CPU::bit_set(status, 2);
+            if CPU::test_bit(status,6) {
+                self.request_interupt(1);
+            }
+            else {
+                status = CPU::bit_reset(status, 2);
+            }
+            self.bus.write_bytes(0xFF41,status);
+        }
+    }
+
+    pub fn is_lcd_enabled(&mut self) -> bool {
+        CPU::test_bit(self.bus.read_byte(0xFF40), 7)
+    }
+
+    pub fn draw_scan_line(&self) {}
+
+    pub fn update_graphics(&mut self, cycles: u32) {
+        self.set_lcd_status();
+
+        if self.is_lcd_enabled() {
+            self.bus.scan_line_counter += cycles;
+        }else {
+            return;
+        }
+
+        if self.bus.scan_line_counter <= 0 {
+            self.bus.memory[0xFF44] += 1;
+            let current_line = self.bus.read_byte(0xFF44);
+
+            self.bus.scan_line_counter = 456;
+
+            if current_line == 144 {
+                self.request_interupt(0);
+            }else if current_line > 153 {
+                self.bus.memory[0xFF44] = 0;
+            }else if current_line < 144 {
+                self.draw_scan_line();
+            }
+        }
+    }
 }
 
 // #[cfg(test)]

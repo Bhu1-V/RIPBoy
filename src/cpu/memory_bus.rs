@@ -2,8 +2,24 @@ use std::fmt;
 
 use super::memory_map::*;
 use crate::gpu::*;
+use crate::useful_func::*;
 
 pub const MAX_CATRIDGE_SIZE: usize = 0x200000;
+
+#[derive(PartialEq)]
+pub enum Color {
+    White,
+    LightGray,
+    DarkGray,
+    Black,
+}
+
+pub struct RGB{
+    red : u8,
+    green : u8,
+    blue : u8,
+}
+
 pub struct MemoryBus {
     // bios flag
     _inbios: bool,
@@ -58,6 +74,270 @@ impl MemoryBus {
 
         self._current_rom_bank = 1;
         self._current_ram_bank = 0
+    }
+
+
+    pub fn render_tiles(&mut self, control : u8) {
+        let mut tile_data:u16 = 0;
+        let mut background_memory:u16 = 0;
+        let mut unsig = true;
+
+        let mut scroll_Y = self.read_byte(0xFF42); 
+        let mut scroll_X = self.read_byte(0xFF43);
+        let mut window_Y = self.read_byte(0xFF4A);
+        let mut window_X = self.read_byte(0xFF4B) - 7; 
+
+        let mut using_window = false;
+
+        if test_bit(control, 5) {
+            if window_Y <= self.read_byte(0xFF44) {
+                using_window = true;
+            }
+        }
+
+        if test_bit(control, 4) {
+            tile_data = 0x8000;
+        } else {
+            tile_data = 0x8800;
+            unsig = false;
+        }
+
+        if false == using_window {
+            if test_bit(control, 3) {
+                background_memory = 0x9C00;
+            } else {
+                background_memory = 0x9800;
+            }
+        } else {
+            if test_bit (control , 6 ) {
+                background_memory = 0x9C00;
+            }else {
+                background_memory = 0x9800;
+            }
+        }
+
+        let mut yPos : u8 = 0;
+
+        if !using_window {
+            yPos = scroll_Y + self.read_byte(0xFF44);
+        } else {
+            yPos = self.read_byte(0xFF44) - window_Y;
+        }
+
+        let tile_row : u16 = (yPos as u16/8).wrapping_mul(32);
+
+        for pixel in 0..160 {
+            let mut x_pos = pixel + scroll_X;
+
+            if using_window {
+                if pixel >= window_X {
+                    x_pos = pixel - window_X ;
+                }
+            }
+
+            let mut tile_col : u16 = x_pos as u16/8;
+            let mut tile_num : i16;
+
+            let mut tile_address : u16 = background_memory + tile_row + tile_col;
+
+            if unsig {
+                tile_num = self.read_byte(tile_address) as i16;
+            } else {
+                tile_num = self.read_byte(tile_address) as i16;
+            }
+
+            let mut tile_location : u16 = tile_data ;
+
+            if unsig {
+                tile_location += (tile_num * 16) as u16;
+            } else {
+                tile_location += ((tile_num + 128) * 16) as u16;
+            }
+
+            let mut line : u8 = yPos % 8;
+            line *= 2;
+            let mut data_1 = self.read_byte(tile_location + line as u16);
+            let mut data_2 = self.read_byte(tile_location + line as u16 + 1);
+
+            let mut color_bit = x_pos % 8 ;
+            color_bit -= 7;
+            color_bit = color_bit.wrapping_mul((-1 as i8) as u8);
+
+            let mut color_num = if test_bit(data_2 , color_bit) {1} else {0};
+            color_num <<= 1;
+            color_num |= if test_bit(data_1 , color_bit) {1} else {0};
+
+            let col = self.get_color(color_num , 0xFF47);
+
+            let mut red = 0;
+            let mut green = 0;
+            let mut blue = 0;
+
+            match col {
+                Color::White => {
+                    red = 255;
+                    green = 255;
+                    blue = 255;
+                }
+
+                Color::LightGray => {
+                    red = 0xCC;
+                    green = 0xCC;
+                    blue = 0xCC;
+                }
+
+                Color::DarkGray => {
+                    red = 0x77;
+                    green = 0x77;
+                    blue = 0x77;
+                }
+
+                _ => {
+                    red = 0;
+                    green = 0;
+                    blue = 0;
+                }
+            }
+
+            let finaly = self.read_byte(0xFF44);
+
+            if (finaly < 0) || (finaly > 143) || (pixel < 0) || (pixel > 159) {
+                continue;
+            }
+
+
+            // ADD RGB INTO SCREEN BUFFER
+        }
+    }
+
+    pub fn render_sprites(&mut self, control : u8){
+        let mut use8x16 = false;
+        if test_bit(control,2) {
+            use8x16 = true;
+        }
+
+        for sprite in 0..40 {
+            let index = sprite * 4;
+            let y_pos = self.read_byte(0xFE00+index) - 16;
+            let x_pos = self.read_byte(0xFE00+index+1) - 8;
+            let tile_location = self.read_byte(0xFE00 + index + 2);
+            let attributes = self.read_byte(0xFE00 + index + 3);
+
+            let y_flip = test_bit(attributes,6);
+            let x_flip = test_bit(attributes,5);
+
+            let scan_line = self.read_byte(0xFF44);
+            let mut ysize:u8 = 8;
+            if use8x16 {
+                ysize = 16;
+            }
+
+            if (scan_line >= y_pos) && (scan_line < (y_pos + ysize)) {
+                let mut line = scan_line - y_pos;
+
+                if y_flip {
+                    line -= ysize;
+                    line = line.wrapping_mul((-1 as i8) as u8);
+                }
+
+                line.wrapping_mul(2);
+
+                let data_address : u16 = (0x8000 + ((tile_location as u16).wrapping_mul(16))) + line as u16;
+
+                let data_1 = self.read_byte(data_address);
+                let data_2 = self.read_byte(data_address + 1);
+
+                for tile_pixel in (0..8).rev() {
+                    let mut color_bit:i32 = tile_pixel;
+
+                    if x_flip {
+                        color_bit -= 7;
+                        color_bit = color_bit.wrapping_mul(-1);
+                    }
+
+                    let mut color_num = if test_bit(data_2, color_bit as u8) {1} else {0};
+                    color_num <<= 1;
+                    let b = if test_bit(data_1,color_bit as u8) {1} else {0};
+                    color_num |= b;
+
+                    let mut color_address = if test_bit(attributes,4) {0xFF49} else {0xFF48};
+
+                    let col = self.get_color(color_num,color_address);
+
+                    if col == Color::White {
+                        continue;
+                    }
+                    
+                    let mut red:u8 = 0;
+                    let mut green:u8 = 0;
+                    let mut blue:u8 = 0;
+
+                    match col {
+                        Color::White => {
+                            red = 255;
+                            green = 255;
+                            blue = 255;
+                        }
+                        Color::LightGray => {
+                            red = 0xCC;
+                            green = 0xCC;
+                            blue = 0xCC;
+                        }
+                        Color::DarkGray => {
+                            red = 0x77;
+                            green = 0x77;
+                            blue = 0x77;
+                        }
+                        _ => {
+                            red = 0;
+                            green = 0;
+                            blue = 0;
+                        }
+                    }
+
+                    let mut x_pix = 0 - tile_pixel;
+                    x_pix += 7;
+
+                    let pixel = x_pos + x_pix as u8;
+
+                    if (scan_line < 0) || (scan_line > 143) || (pixel<0) || (pixel > 159) {
+                        continue;
+                    }
+
+                    // ADD RGB TO SCRREN BUFFER
+                }
+            }
+        }
+    }
+
+    pub fn get_color(&mut self , color_num : u8 , address : u16) -> Color {
+        let mut res = Color::White;
+        let palette = self.read_byte(address);
+        let mut  hi = 0;
+        let mut lo = 0;
+
+        match color_num {
+            0 => { hi = 1 ; lo = 0; }
+            1 => { hi = 3 ; lo = 2; }
+            2 => { hi = 5 ; lo = 4; }
+            3 => { hi = 7 ; lo = 6; }
+            _ => panic!("unimplemented color_num case"),
+        }
+
+        let mut color = 0;
+        color = if test_bit(palette,hi) {1} else {0};
+        color <<= 1;
+        let b = if test_bit(palette,lo) {1} else {0};
+        color |= b;
+
+        match color {
+            0 => res = Color::White,
+            1 => res = Color::LightGray,
+            2 => res = Color::DarkGray,
+            3 => res = Color::Black,
+            _ => panic!("Unhandled color"),
+        }
+        res
     }
 
     pub fn handle_banking(&mut self, address: usize, value: u8) {

@@ -2063,7 +2063,17 @@ impl CPU {
         CPU::test_bit(self.bus.read_byte(0xFF40), 7)
     }
 
-    pub fn draw_scan_line(&self) {}
+    pub fn draw_scan_line(&mut self) {
+        let control = self.bus.read_byte(0xFF40);
+
+        if CPU::test_bit(control, 0) {
+            self.bus.render_tiles(control);
+        }
+
+        if CPU::test_bit(control, 1) {
+            self.bus.render_sprites(control);
+        }
+    }
 
     pub fn update_graphics(&mut self, cycles: u32) {
         self.set_lcd_status();

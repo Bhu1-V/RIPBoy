@@ -5,6 +5,7 @@ use memory_bus::MemoryBus;
 use registers::Registers;
 use target::*;
 use timer::*;
+use crate::useful_func::*;
 
 pub mod clock;
 pub mod flags_register;
@@ -1840,40 +1841,10 @@ impl CPU {
         self.registers.l = self._rsv.l;
     }
 
-    fn bit_set(mut i: u8, b: u8) -> u8 {
-        i = match b {
-            0 => i | 0b_0000_0001,
-            1 => i | 0b_0000_0010,
-            2 => i | 0b_0000_0100,
-            3 => i | 0b_0000_1000,
-            4 => i | 0b_0001_0000,
-            5 => i | 0b_0010_0000,
-            6 => i | 0b_0100_0000,
-            7 => i | 0b_1000_0000,
-            _ => panic!("unhandled bit_set fun"),
-        };
-        i
-    }
-
-    fn bit_reset(mut i: u8, b: u8) -> u8 {
-        i = match b {
-            0 => i & 0b_1111_1110,
-            1 => i & 0b_1111_1101,
-            2 => i & 0b_1111_1011,
-            3 => i & 0b_1111_0111,
-            4 => i & 0b_1110_1111,
-            5 => i & 0b_1101_1111,
-            6 => i & 0b_1011_1111,
-            7 => i & 0b_0111_1111,
-            _ => panic!("unhandled bit_reset fun"),
-        };
-        i
-    }
-
     pub fn request_interupt(&mut self, i: u8) {
         // todo implement Inturupt.
         let mut req = self.bus.read_byte(0xFF0F);
-        req = CPU::bit_set(req, i);
+        req = bit_set(req, i);
         self.bus.write_bytes(0xFF0F, req);
     }
 
@@ -1899,68 +1870,6 @@ impl CPU {
         }
     }
 
-    fn test_bit(i: u8, b: u8) -> bool {
-        match b {
-            0 => {
-                if (i & 1) == 1 {
-                    true
-                } else {
-                    false
-                }
-            }
-            1 => {
-                if ((i >> 1) & 1) == 1 {
-                    true
-                } else {
-                    false
-                }
-            }
-            2 => {
-                if ((i >> 2) & 1) == 1 {
-                    true
-                } else {
-                    false
-                }
-            }
-            3 => {
-                if ((i >> 3) & 1) == 1 {
-                    true
-                } else {
-                    false
-                }
-            }
-            4 => {
-                if ((i >> 4) & 1) == 1 {
-                    true
-                } else {
-                    false
-                }
-            }
-            5 => {
-                if ((i >> 5) & 1) == 1 {
-                    true
-                } else {
-                    false
-                }
-            }
-            6 => {
-                if ((i >> 6) & 1) == 1 {
-                    true
-                } else {
-                    false
-                }
-            }
-            7 => {
-                if ((i >> 7) & 1) == 1 {
-                    true
-                } else {
-                    false
-                }
-            }
-            _ => panic!("Unhandled test_bit case"),
-        }
-    }
-
     pub fn do_interupts(&mut self) {
         if self.bus.interupt_master == true {
             let req = self.bus.read_byte(0xFF0F);
@@ -1968,8 +1877,8 @@ impl CPU {
 
             if req > 0 {
                 for i in 1..6 {
-                    if CPU::test_bit(req, i) {
-                        if CPU::test_bit(enabled, i) {
+                    if test_bit(req, i) {
+                        if test_bit(enabled, i) {
                             self.service_interupt(i);
                         }
                     }
@@ -1981,7 +1890,7 @@ impl CPU {
     pub fn service_interupt(&mut self, i: u8) {
         self.bus.interupt_master = false;
         let mut req = self.bus.read_byte(0xFF0F);
-        req = CPU::bit_reset(req, i);
+        req = bit_reset(req, i);
         self.bus.write_bytes(0xFF0F, req);
 
         self.push(self.pc);
@@ -2002,7 +1911,7 @@ impl CPU {
             self.bus.scan_line_counter = 456;
             self.bus.memory[0xFF44] = 0;
             status &= 252;
-            status = CPU::bit_set(status, 0);
+            status = bit_set(status, 0);
             self.bus.write_bytes(0xFF41, status);
             return;
         }
@@ -2015,9 +1924,9 @@ impl CPU {
 
         if current_line >= 144 {
             mode = 1;
-            status = CPU::bit_set(status, 0);
-            status = CPU::bit_set(status,1);
-            reqInt = CPU::test_bit(status,4);
+            status = bit_set(status, 0);
+            status = bit_set(status,1);
+            reqInt = test_bit(status,4);
         }else {
             let mode_2_bounds = 456 -80;
             let mode_3_bounds = mode_2_bounds - 172;
@@ -2025,21 +1934,21 @@ impl CPU {
             // mode 2
             if self.bus.scan_line_counter >= mode_2_bounds {
                 mode = 2;
-                status = CPU::bit_set(status, 1);
-                status = CPU::bit_reset(status, 0);
-                reqInt = CPU::test_bit(status,5);
+                status = bit_set(status, 1);
+                status = bit_reset(status, 0);
+                reqInt = test_bit(status,5);
             } 
 
             // mode 3
             else if self.bus.scan_line_counter >= mode_3_bounds {
                 mode = 3;
-                status = CPU::bit_set(status, 1);
-                status = CPU::bit_set(status, 0);
+                status = bit_set(status, 1);
+                status = bit_set(status, 0);
             }else {
                 mode = 0;
-                status = CPU::bit_reset(status, 1);
-                status = CPU::bit_reset(status, 0);
-                reqInt = CPU::test_bit(status, 3);
+                status = bit_reset(status, 1);
+                status = bit_reset(status, 0);
+                reqInt = test_bit(status, 3);
             }
         }
 
@@ -2048,29 +1957,29 @@ impl CPU {
         }
 
         if current_line == self.bus.read_byte(0xFF45) {
-            status = CPU::bit_set(status, 2);
-            if CPU::test_bit(status,6) {
+            status = bit_set(status, 2);
+            if test_bit(status,6) {
                 self.request_interupt(1);
             }
             else {
-                status = CPU::bit_reset(status, 2);
+                status = bit_reset(status, 2);
             }
             self.bus.write_bytes(0xFF41,status);
         }
     }
 
     pub fn is_lcd_enabled(&mut self) -> bool {
-        CPU::test_bit(self.bus.read_byte(0xFF40), 7)
+        test_bit(self.bus.read_byte(0xFF40), 7)
     }
 
     pub fn draw_scan_line(&mut self) {
         let control = self.bus.read_byte(0xFF40);
 
-        if CPU::test_bit(control, 0) {
+        if test_bit(control, 0) {
             self.bus.render_tiles(control);
         }
 
-        if CPU::test_bit(control, 1) {
+        if test_bit(control, 1) {
             self.bus.render_sprites(control);
         }
     }

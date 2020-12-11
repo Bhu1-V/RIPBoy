@@ -47,6 +47,7 @@ pub struct MemoryBus {
     pub divider_register: u8,
 
     pub scan_line_counter : u32,
+    pub joypad_state:u8,
 }
 
 impl fmt::Debug for MemoryBus {
@@ -464,6 +465,10 @@ impl MemoryBus {
                 return self.gpu.read_vram(address - VRAM_BEGIN);
             }
 
+            0xFF00 => {
+                return self.get_joypad_state();
+            }
+
             ZRAM_BEGIN..=ZRAM_END => {
                 return self.memory[address - ZRAM_BEGIN];
             }
@@ -561,6 +566,60 @@ impl MemoryBus {
             4 => self.mem_timer_counter = 256,  // freq 16382
             _ => panic!("Unhandled set_freq arm"),
         }
+    }
+
+    pub fn key_pressed(&mut self , key : u8) -> bool{
+        let mut previously_unset = false;
+
+        if test_bit(self.joypad_state , key) == false {
+            previously_unset = true;
+        }
+
+        self.joypad_state = bit_reset(self.joypad_state, key);
+
+        let mut button = true;
+
+        if key > 3 {
+            button = true;
+        } else {
+            button = false;
+        }
+
+        let key_req = self.memory[0xFF00];
+        let mut request_interupt = false;
+
+        if button && !test_bit(key_req,5) {
+            request_interupt = true;
+        } else if !button && !test_bit(key_req,4) {
+            request_interupt = true;
+        }
+
+        if request_interupt && !previously_unset {
+            return true;
+        }else {
+            false
+        }
+
+    }
+
+    pub fn key_released(&mut self , key:u8) {
+        self.joypad_state = bit_set(self.joypad_state, key);
+    }
+
+    pub fn get_joypad_state(&self) -> u8 {
+        let mut res:u8 = self.memory[0xFF00];
+        res ^= 0xFF;
+
+        if !test_bit(res,4) {
+            let mut top_joypad:u8 = self.joypad_state >> 4;
+            top_joypad |= 0xF0;
+            res &= top_joypad;
+        } else if !test_bit(res,5) {
+            let mut bottom_joypad = self.joypad_state & 0xF;
+            bottom_joypad |= 0xF0;
+            res &= bottom_joypad;
+        }
+        res
     }
 
     pub fn clock_enabled(&mut self) -> bool {

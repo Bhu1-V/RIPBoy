@@ -1848,6 +1848,12 @@ impl CPU {
         self.bus.write_bytes(0xFF0F, req);
     }
 
+    pub fn get_key_pressed(&mut self , key:u8) {
+        if self.bus.key_pressed(key) {
+            self.request_interupt(4);
+        }
+    }
+
     pub fn update_timers(&mut self, cycles: u32) {
         self.bus.do_divider_register(cycles);
 

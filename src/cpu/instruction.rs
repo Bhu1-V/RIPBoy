@@ -960,7 +960,6 @@ impl Instruction {
                 SourceRegister::A,
             ))),
 
-            _ => None,
         }
     }
 

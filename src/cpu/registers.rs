@@ -1,4 +1,4 @@
-use crate::cpu::flags_register::{self, FlagsRegister};
+use crate::cpu::flags_register::{FlagsRegister};
 #[derive(Debug)]
 pub struct Registers {
     pub a: u8,

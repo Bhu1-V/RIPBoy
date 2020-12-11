@@ -29,7 +29,7 @@ pub struct CPU {
 }
 
 impl CPU {
-    fn execute(&mut self, instruction: Instruction) -> u16 {
+    fn _execute(&mut self, instruction: Instruction) -> u16 {
         if self.is_halted {
             return self.pc;
         }
@@ -66,45 +66,45 @@ impl CPU {
                     ArthemeticTarget::D8 => {
                         // TO-DO : Implement correctly
                         self.m = 1;
-                        value = self.read_next_byte();
+                        value = self._read_next_byte();
                     }
                     ArthemeticTarget::HLBC => {
                         let new_val =
-                            self.add_16bit(self.registers.get_hl(), self.registers.get_bc());
+                            self._add_16bit(self.registers.get_hl(), self.registers.get_bc());
                         self.registers.set_hl(new_val);
                         self.m = 3;
                         return self.pc.wrapping_add(1);
                     }
                     ArthemeticTarget::HLDE => {
                         let new_val =
-                            self.add_16bit(self.registers.get_hl(), self.registers.get_de());
+                            self._add_16bit(self.registers.get_hl(), self.registers.get_de());
                         self.registers.set_hl(new_val);
                         self.m = 3;
                         return self.pc.wrapping_add(1);
                     }
                     ArthemeticTarget::HLHL => {
                         let new_val =
-                            self.add_16bit(self.registers.get_hl(), self.registers.get_hl());
+                            self._add_16bit(self.registers.get_hl(), self.registers.get_hl());
                         self.registers.set_hl(new_val);
                         self.m = 3;
                         return self.pc.wrapping_add(1);
                     }
                     ArthemeticTarget::HLSP => {
-                        let new_val = self.add_16bit(self.registers.get_hl(), self.sp);
+                        let new_val = self._add_16bit(self.registers.get_hl(), self.sp);
                         self.registers.set_hl(new_val);
                         self.m = 3;
                         return self.pc.wrapping_add(1);
                     }
                     ArthemeticTarget::SP => {
                         // If ERROR CHECK THIS.
-                        let b = self.read_next_byte() as u16;
-                        let new_val = self.add_16bit(self.sp, b);
+                        let b = self._read_next_byte() as u16;
+                        let new_val = self._add_16bit(self.sp, b);
                         self.sp = new_val;
                         self.m = 4;
                         return self.pc.wrapping_add(1);
                     }
                 }
-                let new_value = self.add(self.registers.a, value, false);
+                let new_value = self._add(self.registers.a, value, false);
                 self.registers.a = new_value;
                 self.m += 1;
 
@@ -143,12 +143,12 @@ impl CPU {
                         // TO-DO : Implement correctly
                         self.m = 1;
 
-                        value = self.read_next_byte();
+                        value = self._read_next_byte();
                     }
 
                     _ => panic!("Reached Unreachable code"),
                 }
-                let new_value = self.sub(self.registers.a, value, false);
+                let new_value = self._sub(self.registers.a, value, false);
                 self.registers.a = new_value;
                 self.m += 1;
 
@@ -187,13 +187,13 @@ impl CPU {
                         // TO-DO : Implement correctly
                         self.m = 1;
 
-                        value = self.read_next_byte();
+                        value = self._read_next_byte();
                     }
                     _ => panic!("Reached Unreachable code"),
                 }
-                let new_value = self.add(self.registers.a, value, true);
+                let new_value = self._add(self.registers.a, value, true);
                 self.registers.a = new_value;
-                let new_value = self.add(self.registers.a, value, false);
+                let new_value = self._add(self.registers.a, value, false);
                 self.registers.a = new_value;
                 self.m += 1;
 
@@ -232,13 +232,13 @@ impl CPU {
                         // TO-DO : Implement correctly
                         self.m = 1;
 
-                        value = self.read_next_byte();
+                        value = self._read_next_byte();
                     }
                     _ => panic!("Reached Unreachable code"),
                 }
-                let new_value = self.sub(self.registers.a, value, true);
+                let new_value = self._sub(self.registers.a, value, true);
                 self.registers.a = new_value;
-                let new_value = self.sub(self.registers.a, value, false);
+                let new_value = self._sub(self.registers.a, value, false);
                 self.m += 1;
 
                 self.registers.a = new_value;
@@ -277,11 +277,11 @@ impl CPU {
                         // TO-DO : Implement correctly
                         self.m = 1;
 
-                        value = self.read_next_byte();
+                        value = self._read_next_byte();
                     }
                     _ => panic!("Reached Unreachable code"),
                 }
-                self.sub(self.registers.a, value, false);
+                self._sub(self.registers.a, value, false);
                 self.m += 1;
 
                 return self.pc.wrapping_add(1);
@@ -318,11 +318,11 @@ impl CPU {
                         // TO-DO : Implement correctly
                         self.m = 1;
 
-                        value = self.read_next_byte();
+                        value = self._read_next_byte();
                     }
                     _ => panic!("Reached Unreachable code"),
                 }
-                let new_value = self.and(value);
+                let new_value = self._and(value);
                 self.registers.a = new_value;
                 self.m += 1;
 
@@ -361,11 +361,11 @@ impl CPU {
                         // TO-DO : Implement correctly
                         self.m = 1;
 
-                        value = self.read_next_byte();
+                        value = self._read_next_byte();
                     }
                     _ => panic!("Reached Unreachable code"),
                 }
-                let new_value = self.or(value, false);
+                let new_value = self._or(value, false);
                 self.m += 1;
 
                 self.registers.a = new_value;
@@ -404,11 +404,11 @@ impl CPU {
                         // TO-DO : Implement correctly
                         self.m = 1;
 
-                        value = self.read_next_byte();
+                        value = self._read_next_byte();
                     }
                     _ => panic!("Reached Unreachable code"),
                 }
-                let new_value = self.or(value, true);
+                let new_value = self._or(value, true);
                 self.m += 1;
 
                 self.registers.a = new_value;
@@ -423,41 +423,41 @@ impl CPU {
                     JumpTest::Carry => self.registers.f.carry,
                     JumpTest::A16 => true,
                     JumpTest::HL => {
-                        return self.jump(true, true);
+                        return self._jump(true, true);
                     }
                     _ => panic!("implement adiitional jumptest"),
                 };
-                self.jump(jump_condition, false)
+                self._jump(jump_condition, false)
             }
 
             Instruction::INC(target) => {
                 match target {
                     IncDecTarget::A => {
-                        self.registers.a = self.add(self.registers.a, 1, false);
+                        self.registers.a = self._add(self.registers.a, 1, false);
                     }
                     IncDecTarget::B => {
-                        self.registers.b = self.add(self.registers.b, 1, false);
+                        self.registers.b = self._add(self.registers.b, 1, false);
                     }
                     IncDecTarget::C => {
-                        self.registers.c = self.add(self.registers.c, 1, false);
+                        self.registers.c = self._add(self.registers.c, 1, false);
                     }
                     IncDecTarget::D => {
-                        self.registers.d = self.add(self.registers.d, 1, false);
+                        self.registers.d = self._add(self.registers.d, 1, false);
                     }
                     IncDecTarget::E => {
-                        self.registers.e = self.add(self.registers.e, 1, false);
+                        self.registers.e = self._add(self.registers.e, 1, false);
                     }
                     IncDecTarget::H => {
-                        self.registers.h = self.add(self.registers.h, 1, false);
+                        self.registers.h = self._add(self.registers.h, 1, false);
                     }
                     IncDecTarget::L => {
-                        self.registers.l = self.add(self.registers.l, 1, false);
+                        self.registers.l = self._add(self.registers.l, 1, false);
                     }
                     IncDecTarget::HL2 => {
                         self.m = 2;
 
                         value = self.bus.read_byte(self.registers.get_hl());
-                        value = self.add(value, 1, false);
+                        value = self._add(value, 1, false);
                         self.bus.write_bytes(self.registers.get_hl(), value)
                     }
                     IncDecTarget::BC => {
@@ -502,31 +502,31 @@ impl CPU {
             Instruction::DEC(target) => {
                 match target {
                     IncDecTarget::A => {
-                        self.registers.a = self.sub(self.registers.a, 1, false);
+                        self.registers.a = self._sub(self.registers.a, 1, false);
                     }
                     IncDecTarget::B => {
-                        self.registers.b = self.sub(self.registers.b, 1, false);
+                        self.registers.b = self._sub(self.registers.b, 1, false);
                     }
                     IncDecTarget::C => {
-                        self.registers.c = self.sub(self.registers.c, 1, false);
+                        self.registers.c = self._sub(self.registers.c, 1, false);
                     }
                     IncDecTarget::D => {
-                        self.registers.d = self.sub(self.registers.d, 1, false);
+                        self.registers.d = self._sub(self.registers.d, 1, false);
                     }
                     IncDecTarget::E => {
-                        self.registers.e = self.sub(self.registers.e, 1, false);
+                        self.registers.e = self._sub(self.registers.e, 1, false);
                     }
                     IncDecTarget::H => {
-                        self.registers.h = self.sub(self.registers.h, 1, false);
+                        self.registers.h = self._sub(self.registers.h, 1, false);
                     }
                     IncDecTarget::L => {
-                        self.registers.l = self.sub(self.registers.l, 1, false);
+                        self.registers.l = self._sub(self.registers.l, 1, false);
                     }
                     IncDecTarget::HL2 => {
                         self.m = 2;
 
                         value = self.bus.read_byte(self.registers.get_hl());
-                        value = self.sub(value, 1, false);
+                        value = self._sub(value, 1, false);
                         self.bus.write_bytes(self.registers.get_hl(), value)
                     }
                     IncDecTarget::BC => {
@@ -578,7 +578,7 @@ impl CPU {
                         LoadByteSource::E => self.registers.e,
                         LoadByteSource::H => self.registers.h,
                         LoadByteSource::L => self.registers.l,
-                        LoadByteSource::D8 => self.read_next_byte(),
+                        LoadByteSource::D8 => self._read_next_byte(),
                         LoadByteSource::HL => self.bus.read_byte(self.registers.get_hl()),
                         LoadByteSource::BCV => self.bus.read_byte(self.registers.get_bc()),
                         LoadByteSource::DEV => self.bus.read_byte(self.registers.get_de()),
@@ -603,19 +603,18 @@ impl CPU {
                         }
                         LoadByteSource::OByte => {
                             let u: u16 = 0xFF00;
-                            let b = self.read_next_byte() as u16;
+                            let b = self._read_next_byte() as u16;
                             let r = self.bus.read_byte(u.overflowing_add(b).0);
                             r
                         }
                         // TO - DO test this.
                         LoadByteSource::OWord => {
-                            let w = self.read_next_word();
+                            let w = self._read_next_word();
                             let r = self.bus.read_byte(w);
                             r
                         }
-                        _ => panic!("Load source error"),
                     };
-                    // todo - add timing
+
                     match target {
                         LoadByteTarget::A => self.registers.a = source_value,
                         LoadByteTarget::B => self.registers.b = source_value,
@@ -642,11 +641,9 @@ impl CPU {
                         }
                         // todo : test this
                         LoadByteTarget::OWord => {
-                            let w = self.read_next_word();
+                            let w = self._read_next_word();
                             self.bus.write_bytes(w, source_value)
                         }
-
-                        _ => panic!("add more"),
                     }
                     self.pc.wrapping_add(1)
                 }
@@ -656,10 +653,10 @@ impl CPU {
             Instruction::LD2(load_type) => match load_type {
                 LoadType::Word(target, source) => {
                     let source_value = match source {
-                        LoadWordSource::D16 => self.read_next_word(),
-                        LoadWordSource::SP => self.read_next_word(),
+                        LoadWordSource::D16 => self._read_next_word(),
+                        LoadWordSource::SP => self._read_next_word(),
                         LoadWordSource::SPr8 => {
-                            let b = self.read_next_byte() as u16;
+                            let b = self._read_next_byte() as u16;
                             b.wrapping_add(self.sp)
                         }
                         LoadWordSource::HL => self.registers.get_hl(),
@@ -689,11 +686,11 @@ impl CPU {
                     JumpTest::Always => true,
                     _ => panic!("implement adiitional jumptest"),
                 };
-                self.jump_8bit(jump_condition)
+                self._jump_8bit(jump_condition)
             }
 
             Instruction::RST(target) => {
-                self.rsv();
+                self._rsv();
                 self.m = 3;
                 self.sp = self.sp.wrapping_sub(2);
                 self.bus.write_bytes(self.sp, (self.pc & 0xFF) as u8);
@@ -707,7 +704,6 @@ impl CPU {
                     RSTTarget::H28 => 0x28 as u16,
                     RSTTarget::H30 => 0x30 as u16,
                     RSTTarget::H38 => 0x38 as u16,
-                    _ => panic!("Implement"),
                 }
             }
 
@@ -718,12 +714,12 @@ impl CPU {
                     StackTarget::HL => self.registers.get_hl(),
                     StackTarget::AF => self.registers.get_af(),
                 };
-                self.push(value);
+                self._push(value);
                 self.pc.wrapping_add(1)
             }
 
             Instruction::POP(target) => {
-                let result = self.pop();
+                let result = self._pop();
                 match target {
                     StackTarget::BC => self.registers.set_bc(result),
                     StackTarget::DE => self.registers.set_de(result),
@@ -738,7 +734,7 @@ impl CPU {
                     JumpTest::NotZero => !self.registers.f.zero,
                     _ => panic!("TODO: support more conditions"),
                 };
-                self.call(jump_condition)
+                self._call(jump_condition)
             }
 
             Instruction::RET(test) => {
@@ -749,12 +745,12 @@ impl CPU {
                     JumpTest::Carry => self.registers.f.carry,
                     JumpTest::Always => true,
                     JumpTest::I => {
-                        self.reset_registers();
+                        self._reset_registers();
                         true
                     }
                     _ => panic!("TODO: support more conditions"),
                 };
-                self.return_(jump_condition)
+                self._return_(jump_condition)
             }
 
             Instruction::NOP => self.pc.wrapping_add(1),
@@ -813,7 +809,7 @@ impl CPU {
             }
 
             Instruction::RLCA => {
-                let b = self.registers.f.get_carry();
+                // let b = self.registers.f.get_carry();
                 if (self.registers.a & 0x80) == 1 {
                     self.registers.f.set_carry(true);
                     self.registers.a <<= 1;
@@ -1642,7 +1638,7 @@ impl CPU {
         }
     }
     // TO- DO : if error check whether all sp adds are correctly done.
-    fn rsv(&mut self) {
+    fn _rsv(&mut self) {
         self._rsv.a = self.registers.a;
         self._rsv.b = self.registers.b;
         self._rsv.c = self.registers.c;
@@ -1653,35 +1649,35 @@ impl CPU {
         self._rsv.l = self.registers.l;
     }
 
-    fn call(&mut self, should_jump: bool) -> u16 {
+    fn _call(&mut self, should_jump: bool) -> u16 {
         let next_pc = self.pc.wrapping_add(3);
         if should_jump {
-            self.push(next_pc);
-            self.read_next_word()
+            self._push(next_pc);
+            self._read_next_word()
         } else {
             next_pc
         }
     }
 
-    fn return_(&mut self, should_jump: bool) -> u16 {
+    fn _return_(&mut self, should_jump: bool) -> u16 {
         if should_jump {
-            self.pop()
+            self._pop()
         } else {
             self.pc.wrapping_add(1)
         }
     }
 
-    fn read_next_byte(&mut self) -> u8 {
+    fn _read_next_byte(&mut self) -> u8 {
         self.pc = self.pc.wrapping_add(1);
         self.bus.read_byte(self.pc)
     }
 
-    fn read_next_word(&mut self) -> u16 {
+    fn _read_next_word(&mut self) -> u16 {
         self.pc = self.pc.wrapping_add(2);
         (self.bus.read_byte(self.pc - 1) as u16) << 8 | self.bus.read_byte(self.pc) as u16
     }
 
-    fn pop(&mut self) -> u16 {
+    fn _pop(&mut self) -> u16 {
         let lsb = self.bus.read_byte(self.sp) as u16;
         self.sp = self.sp.wrapping_add(1);
 
@@ -1691,7 +1687,7 @@ impl CPU {
         (msb << 8) | lsb
     }
 
-    fn push(&mut self, value: u16) {
+    fn _push(&mut self, value: u16) {
         self.sp = self.sp.wrapping_sub(1);
         self.bus.write_bytes(self.sp, ((value & 0xFF00) >> 8) as u8);
 
@@ -1700,15 +1696,15 @@ impl CPU {
     }
 
     fn step(&mut self) {
-        let instruction_byte = self.bus.read_byte(self.pc);
+        let mut instruction_byte = self.bus.read_byte(self.pc);
         let prefixed = instruction_byte == 0xCB;
         if prefixed {
-            let instruction_byte = self.bus.read_byte(self.pc + 1);
+            instruction_byte = self.bus.read_byte(self.pc + 1);
         }
 
         let next_pc = if let Some(instruction) = Instruction::from_byte(instruction_byte, prefixed)
         {
-            self.execute(instruction)
+            self._execute(instruction)
         } else {
             panic!("Invaild Instruction {:x}", instruction_byte);
         };
@@ -1716,7 +1712,7 @@ impl CPU {
         self.pc = next_pc;
     }
 
-    fn add(&mut self, reg: u8, val: u8, carry: bool) -> u8 {
+    fn _add(&mut self, reg: u8, val: u8, carry: bool) -> u8 {
         let cy = if carry {
             if self.registers.f.carry == true {
                 1
@@ -1734,13 +1730,13 @@ impl CPU {
             half_carry: ((reg & 0xF).overflowing_add(val & 0xF)).0 > 0xF,
         };
         if carry {
-            self.add(reg, cy, false)
+            self._add(reg, cy, false)
         } else {
             new_val
         }
     }
 
-    fn add_16bit(&mut self, reg: u16, val: u16) -> u16 {
+    fn _add_16bit(&mut self, reg: u16, val: u16) -> u16 {
         let (new_val, over_flowed) = reg.overflowing_add(val);
         self.registers.f = FlagsRegister {
             zero: self.registers.f.zero,
@@ -1751,7 +1747,7 @@ impl CPU {
         new_val
     }
 
-    fn sub(&mut self, reg: u8, val: u8, carry: bool) -> u8 {
+    fn _sub(&mut self, reg: u8, val: u8, carry: bool) -> u8 {
         let cy = if carry {
             if self.registers.f.carry == true {
                 1
@@ -1769,13 +1765,13 @@ impl CPU {
             half_carry: ((reg & 0xF).overflowing_sub(val & 0xF)).0 > 0xF,
         };
         if carry {
-            self.sub(reg, cy, false)
+            self._sub(reg, cy, false)
         } else {
             new_val
         }
     }
 
-    fn and(&mut self, value: u8) -> u8 {
+    fn _and(&mut self, value: u8) -> u8 {
         let new_val = self.registers.a & value;
         self.registers.f = FlagsRegister {
             zero: new_val == 0,
@@ -1786,7 +1782,7 @@ impl CPU {
         new_val
     }
 
-    fn or(&mut self, value: u8, exculsive: bool) -> u8 {
+    fn _or(&mut self, value: u8, exculsive: bool) -> u8 {
         let new_val = if exculsive {
             self.registers.a ^ value
         } else {
@@ -1802,9 +1798,9 @@ impl CPU {
         new_val
     }
 
-    fn jump_8bit(&mut self, should_jump: bool) -> u16 {
+    fn _jump_8bit(&mut self, should_jump: bool) -> u16 {
         if should_jump {
-            let b = self.read_next_byte() as i8;
+            let b = self._read_next_byte() as i8;
             self.m = 3;
             return self.pc.wrapping_add(b as u16);
         } else {
@@ -1813,7 +1809,7 @@ impl CPU {
         }
     }
 
-    fn jump(&mut self, should_jump: bool, exception: bool) -> u16 {
+    fn _jump(&mut self, should_jump: bool, exception: bool) -> u16 {
         if should_jump & !(exception) {
             // Gameboy is little endian so read pc + 2 as most significant bit
             // and pc + 1 as least significant bit
@@ -1830,7 +1826,7 @@ impl CPU {
         }
     }
 
-    fn reset_registers(&mut self) {
+    fn _reset_registers(&mut self) {
         self.registers.a = self._rsv.a;
         self.registers.b = self._rsv.b;
         self.registers.c = self._rsv.c;
@@ -1841,7 +1837,7 @@ impl CPU {
         self.registers.l = self._rsv.l;
     }
 
-    pub fn request_interupt(&mut self, i: u8) {
+    pub fn _request_interupt(&mut self, i: u8) {
         // todo implement Inturupt.
         let mut req = self.bus.read_byte(0xFF0F);
         req = bit_set(req, i);
@@ -1850,7 +1846,7 @@ impl CPU {
 
     pub fn get_key_pressed(&mut self , key:u8) {
         if self.bus.key_pressed(key) {
-            self.request_interupt(4);
+            self._request_interupt(4);
         }
     }
 
@@ -1867,7 +1863,7 @@ impl CPU {
                 if self.bus.read_byte(TIMA as u16) == 255 {
                     let tma_val = self.bus.read_byte(TMA as u16);
                     self.bus.write_bytes(TIMA as u16, tma_val);
-                    self.request_interupt(2);
+                    self._request_interupt(2);
                 } else {
                     let tma_val = self.bus.read_byte(TIMA as u16);
                     self.bus.write_bytes(TIMA as u16, tma_val + 1);
@@ -1885,7 +1881,7 @@ impl CPU {
                 for i in 1..6 {
                     if test_bit(req, i) {
                         if test_bit(enabled, i) {
-                            self.service_interupt(i);
+                            self._service_interupt(i);
                         }
                     }
                 }
@@ -1893,13 +1889,13 @@ impl CPU {
         }
     }
 
-    pub fn service_interupt(&mut self, i: u8) {
+    pub fn _service_interupt(&mut self, i: u8) {
         self.bus.interupt_master = false;
         let mut req = self.bus.read_byte(0xFF0F);
         req = bit_reset(req, i);
         self.bus.write_bytes(0xFF0F, req);
 
-        self.push(self.pc);
+        self._push(self.pc);
 
         self.pc = match i {
             0 => 0x40,
@@ -1910,10 +1906,10 @@ impl CPU {
         }
     }
 
-    pub fn set_lcd_status(&mut self){
+    pub fn _set_lcd_status(&mut self){
         let mut status = self.bus.read_byte(0xff41);
 
-        if !self.is_lcd_enabled() {
+        if !self._is_lcd_enabled() {
             self.bus.scan_line_counter = 456;
             self.bus.memory[0xFF44] = 0;
             status &= 252;
@@ -1922,50 +1918,50 @@ impl CPU {
             return;
         }
 
-        let mut current_line = self.bus.read_byte(0xFF44);
-        let mut current_mode = status & 0x3;
+        let current_line = self.bus.read_byte(0xFF44);
+        let current_mode = status & 0x3;
 
-        let mut mode = 0u8;
-        let mut reqInt = false;
+        let mut _mode = 0u8;
+        let mut req_int = false;
 
         if current_line >= 144 {
-            mode = 1;
+            _mode = 1;
             status = bit_set(status, 0);
             status = bit_set(status,1);
-            reqInt = test_bit(status,4);
+            req_int = test_bit(status,4);
         }else {
             let mode_2_bounds = 456 -80;
             let mode_3_bounds = mode_2_bounds - 172;
 
             // mode 2
             if self.bus.scan_line_counter >= mode_2_bounds {
-                mode = 2;
+                _mode = 2;
                 status = bit_set(status, 1);
                 status = bit_reset(status, 0);
-                reqInt = test_bit(status,5);
+                req_int = test_bit(status,5);
             } 
 
             // mode 3
             else if self.bus.scan_line_counter >= mode_3_bounds {
-                mode = 3;
+                _mode = 3;
                 status = bit_set(status, 1);
                 status = bit_set(status, 0);
             }else {
-                mode = 0;
+                _mode = 0;
                 status = bit_reset(status, 1);
                 status = bit_reset(status, 0);
-                reqInt = test_bit(status, 3);
+                req_int = test_bit(status, 3);
             }
         }
 
-        if reqInt && (mode != current_mode) {
-            self.request_interupt(1);
+        if req_int && (_mode != current_mode) {
+            self._request_interupt(1);
         }
 
         if current_line == self.bus.read_byte(0xFF45) {
             status = bit_set(status, 2);
             if test_bit(status,6) {
-                self.request_interupt(1);
+                self._request_interupt(1);
             }
             else {
                 status = bit_reset(status, 2);
@@ -1974,11 +1970,11 @@ impl CPU {
         }
     }
 
-    pub fn is_lcd_enabled(&mut self) -> bool {
+    pub fn _is_lcd_enabled(&mut self) -> bool {
         test_bit(self.bus.read_byte(0xFF40), 7)
     }
 
-    pub fn draw_scan_line(&mut self) {
+    pub fn _draw_scan_line(&mut self) {
         let control = self.bus.read_byte(0xFF40);
 
         if test_bit(control, 0) {
@@ -1991,9 +1987,9 @@ impl CPU {
     }
 
     pub fn update_graphics(&mut self, cycles: u32) {
-        self.set_lcd_status();
+        self._set_lcd_status();
 
-        if self.is_lcd_enabled() {
+        if self._is_lcd_enabled() {
             self.bus.scan_line_counter += cycles;
         }else {
             return;
@@ -2006,11 +2002,11 @@ impl CPU {
             self.bus.scan_line_counter = 456;
 
             if current_line == 144 {
-                self.request_interupt(0);
+                self._request_interupt(0);
             }else if current_line > 153 {
                 self.bus.memory[0xFF44] = 0;
             }else if current_line < 144 {
-                self.draw_scan_line();
+                self._draw_scan_line();
             }
         }
     }

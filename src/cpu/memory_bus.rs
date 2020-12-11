@@ -7,6 +7,7 @@ use crate::useful_func::*;
 pub const MAX_CATRIDGE_SIZE: usize = 0x200000;
 
 #[derive(PartialEq)]
+
 pub enum Color {
     White,
     LightGray,
@@ -83,10 +84,10 @@ impl MemoryBus {
         let mut background_memory:u16 = 0;
         let mut unsig = true;
 
-        let mut scroll_Y = self.read_byte(0xFF42); 
-        let mut scroll_X = self.read_byte(0xFF43);
-        let mut window_Y = self.read_byte(0xFF4A);
-        let mut window_X = self.read_byte(0xFF4B) - 7; 
+        let scroll_Y = self.read_byte(0xFF42); 
+        let scroll_X = self.read_byte(0xFF43);
+        let window_Y = self.read_byte(0xFF4A);
+        let window_X = self.read_byte(0xFF4B) - 7; 
 
         let mut using_window = false;
 
@@ -136,10 +137,10 @@ impl MemoryBus {
                 }
             }
 
-            let mut tile_col : u16 = x_pos as u16/8;
-            let mut tile_num : i16;
+            let tile_col : u16 = x_pos as u16/8;
+            let tile_num : i16;
 
-            let mut tile_address : u16 = background_memory + tile_row + tile_col;
+            let tile_address : u16 = background_memory + tile_row + tile_col;
 
             if unsig {
                 tile_num = self.read_byte(tile_address) as i16;
@@ -157,8 +158,8 @@ impl MemoryBus {
 
             let mut line : u8 = yPos % 8;
             line *= 2;
-            let mut data_1 = self.read_byte(tile_location + line as u16);
-            let mut data_2 = self.read_byte(tile_location + line as u16 + 1);
+            let data_1 = self.read_byte(tile_location + line as u16);
+            let data_2 = self.read_byte(tile_location + line as u16 + 1);
 
             let mut color_bit = x_pos % 8 ;
             color_bit -= 7;
@@ -241,7 +242,7 @@ impl MemoryBus {
                     line = line.wrapping_mul((-1 as i8) as u8);
                 }
 
-                line.wrapping_mul(2);
+                line = line.wrapping_mul(2);
 
                 let data_address : u16 = (0x8000 + ((tile_location as u16).wrapping_mul(16))) + line as u16;
 
@@ -261,7 +262,7 @@ impl MemoryBus {
                     let b = if test_bit(data_1,color_bit as u8) {1} else {0};
                     color_num |= b;
 
-                    let mut color_address = if test_bit(attributes,4) {0xFF49} else {0xFF48};
+                    let color_address = if test_bit(attributes,4) {0xFF49} else {0xFF48};
 
                     let col = self.get_color(color_num,color_address);
 
@@ -403,7 +404,7 @@ impl MemoryBus {
         self._current_rom_bank &= 31;
 
         value &= 224;
-        self._current_rom_bank != value;
+        self._current_rom_bank |= value;
         if self._current_rom_bank == 0 {
             self._current_rom_bank += 1;
         }

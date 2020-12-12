@@ -1,4 +1,8 @@
 use std::fmt;
+use std::fs::{ File };
+use std::io::prelude::*;
+use std::io;
+
 
 use super::memory_map::*;
 use crate::gpu::*;
@@ -60,8 +64,16 @@ impl fmt::Debug for MemoryBus {
 }
 
 impl MemoryBus {
-    pub fn load_catridge(&mut self) {
+    pub fn load_catridge(&mut self) -> io::Result<()>{
         // Implement correctly
+        self._cartridge = [0;MAX_CATRIDGE_SIZE];
+
+        let mut file = File::open("game.gb")?;
+        
+        file.read_exact(&mut self._cartridge)?;
+        // file.read_to_string(&contents);
+        
+        // file.
         // first load catridge
 
         match self._cartridge[0x147] {
@@ -75,7 +87,9 @@ impl MemoryBus {
         }
 
         self._current_rom_bank = 1;
-        self._current_ram_bank = 0
+        self._current_ram_bank = 0;
+
+        Ok(())
     }
 
 
@@ -209,6 +223,8 @@ impl MemoryBus {
 
 
             // ADD RGB INTO SCREEN BUFFER
+            let index = 160 * pixel + finaly;
+            self.gpu.buffer[index as usize] = from_u8_rgb(red,blue,green);
         }
     }
 
@@ -306,7 +322,8 @@ impl MemoryBus {
                         continue;
                     }
 
-                    // ADD RGB TO SCRREN BUFFER
+                    let index = 160 * pixel + scan_line;
+                    self.gpu.buffer[index as usize] = from_u8_rgb(red,blue,green);
                 }
             }
         }

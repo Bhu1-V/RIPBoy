@@ -15,7 +15,7 @@ pub struct GPU {
     _mode: u8,
     _line: u8,
 
-    buffer: [u8; 160 * 144],
+    pub buffer: [u32; 160 * 144],
 }
 
 impl GPU {

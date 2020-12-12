@@ -71,10 +71,6 @@ impl MemoryBus {
         let mut file = File::open("game.gb")?;
         
         file.read_exact(&mut self._cartridge)?;
-        // file.read_to_string(&contents);
-        
-        // file.
-        // first load catridge
 
         match self._cartridge[0x147] {
             1 | 2 | 3 => self._mbc1 = true,

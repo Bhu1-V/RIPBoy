@@ -1,3 +1,4 @@
+use crate::useful_func::*;
 use clock::Clock;
 use flags_register::FlagsRegister;
 use instruction::Instruction;
@@ -5,7 +6,6 @@ use memory_bus::MemoryBus;
 use registers::Registers;
 use target::*;
 use timer::*;
-use crate::useful_func::*;
 
 pub mod clock;
 pub mod flags_register;
@@ -21,7 +21,7 @@ pub struct CPU {
     clock: Clock,
     registers: Registers,
     _rsv: Registers,
-    bus: MemoryBus,
+    pub bus: MemoryBus,
     pc: u16,
     sp: u16,
     is_halted: bool,
@@ -29,6 +29,36 @@ pub struct CPU {
 }
 
 impl CPU {
+
+    pub fn new() -> CPU{
+        CPU {
+            clock : Clock::default(),
+            registers : Registers::default(),
+            _rsv : Registers::default(),
+            bus : MemoryBus::new(),
+            pc : 0,
+            sp : 0,
+            is_halted : false,
+            m : 0,
+        }
+
+    }
+
+    pub fn init_game(&mut self) {
+        self.reset_cpu();
+    }
+
+    pub fn reset_cpu(&mut self) {
+        self.m = 0;
+        self.pc = 0x100;
+        self.registers.set_bc(0x0013);
+        self.registers.set_de(0x00D8);
+        self.registers.set_hl(0x014D);
+        self.is_halted = false;
+        self.sp = 0xFFFE;
+        self.bus.reset();
+    }
+
     fn _execute(&mut self, instruction: Instruction) -> u16 {
         if self.is_halted {
             return self.pc;
@@ -1695,7 +1725,7 @@ impl CPU {
         self.bus.write_bytes(self.sp, (value & 0x00FF) as u8);
     }
 
-    fn step(&mut self) {
+    pub fn step(&mut self) {
         let mut instruction_byte = self.bus.read_byte(self.pc);
         let prefixed = instruction_byte == 0xCB;
         if prefixed {
@@ -1844,7 +1874,7 @@ impl CPU {
         self.bus.write_bytes(0xFF0F, req);
     }
 
-    pub fn get_key_pressed(&mut self , key:u8) {
+    pub fn get_key_pressed(&mut self, key: u8) {
         if self.bus.key_pressed(key) {
             self._request_interupt(4);
         }
@@ -1906,7 +1936,7 @@ impl CPU {
         }
     }
 
-    pub fn _set_lcd_status(&mut self){
+    pub fn _set_lcd_status(&mut self) {
         let mut status = self.bus.read_byte(0xff41);
 
         if !self._is_lcd_enabled() {
@@ -1927,10 +1957,10 @@ impl CPU {
         if current_line >= 144 {
             _mode = 1;
             status = bit_set(status, 0);
-            status = bit_set(status,1);
-            req_int = test_bit(status,4);
-        }else {
-            let mode_2_bounds = 456 -80;
+            status = bit_set(status, 1);
+            req_int = test_bit(status, 4);
+        } else {
+            let mode_2_bounds = 456 - 80;
             let mode_3_bounds = mode_2_bounds - 172;
 
             // mode 2
@@ -1938,15 +1968,14 @@ impl CPU {
                 _mode = 2;
                 status = bit_set(status, 1);
                 status = bit_reset(status, 0);
-                req_int = test_bit(status,5);
-            } 
-
+                req_int = test_bit(status, 5);
+            }
             // mode 3
             else if self.bus.scan_line_counter >= mode_3_bounds {
                 _mode = 3;
                 status = bit_set(status, 1);
                 status = bit_set(status, 0);
-            }else {
+            } else {
                 _mode = 0;
                 status = bit_reset(status, 1);
                 status = bit_reset(status, 0);
@@ -1960,13 +1989,12 @@ impl CPU {
 
         if current_line == self.bus.read_byte(0xFF45) {
             status = bit_set(status, 2);
-            if test_bit(status,6) {
+            if test_bit(status, 6) {
                 self._request_interupt(1);
-            }
-            else {
+            } else {
                 status = bit_reset(status, 2);
             }
-            self.bus.write_bytes(0xFF41,status);
+            self.bus.write_bytes(0xFF41, status);
         }
     }
 
@@ -1991,7 +2019,7 @@ impl CPU {
 
         if self._is_lcd_enabled() {
             self.bus.scan_line_counter += cycles;
-        }else {
+        } else {
             return;
         }
 
@@ -2003,9 +2031,9 @@ impl CPU {
 
             if current_line == 144 {
                 self._request_interupt(0);
-            }else if current_line > 153 {
+            } else if current_line > 153 {
                 self.bus.memory[0xFF44] = 0;
-            }else if current_line < 144 {
+            } else if current_line < 144 {
                 self._draw_scan_line();
             }
         }

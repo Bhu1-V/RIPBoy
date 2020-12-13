@@ -959,7 +959,6 @@ impl Instruction {
                 TargetBit::B7,
                 SourceRegister::A,
             ))),
-
         }
     }
 

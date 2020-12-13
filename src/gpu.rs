@@ -1,7 +1,8 @@
 pub mod tile_pixel_value;
 
-use crate::cpu::memory_map::*;
+// use crate::cpu::memory_map::*;
 use tile_pixel_value::TilePixelValue;
+use crate::useful_func::*;
 
 type Tile = [[TilePixelValue; 8]; 8];
 
@@ -9,7 +10,7 @@ pub fn empty_tile() -> Tile {
     [[TilePixelValue::Zero; 8]; 8]
 }
 pub struct GPU {
-    pub vram: [u8; VRAM_SIZE],
+    // pub vram: [u8; VRAM_SIZE],
     pub tile_set: [Tile; 384],
     _modeclock: u16,
     _mode: u8,
@@ -18,12 +19,25 @@ pub struct GPU {
     pub buffer: [u32; 160 * 144],
 }
 
+// impl defa
+
 impl GPU {
+    pub fn new() -> GPU{
+        GPU {
+            tile_set : [empty_tile() ; 384],
+            _modeclock : 0,
+            _mode : 0,
+            _line : 0,
+
+            buffer : [0 ; 160 * 144],
+        }
+    }
+
     pub fn reset(&mut self) {
         self.buffer = [0; 160 * 144];
 
         for i in 0..(160 * 144) {
-            self.buffer[i] = 0;
+            self.buffer[i] = from_u8_rgb(255, 255, 255);
         }
     }
 
@@ -84,11 +98,11 @@ impl GPU {
 
     fn render_scan(&self) {}
 
-    pub fn read_vram(&self, address: usize) -> u8 {
-        self.vram[address]
-    }
+    // pub fn read_vram(&self, address: usize) -> u8 {
+    //     self.vram[address]
+    // }
 
-    pub fn write_vram(&mut self, index: usize, value: u8) {
+    /*pub fn write_vram(&mut self, index: usize, value: u8) {
         self.vram[index] = value;
         // If our index is greater than 0x1800, we're not writing to the tile set storage
         // so we can just return.
@@ -150,4 +164,5 @@ impl GPU {
             self.tile_set[tile_index][row_index][pixel_index] = value;
         }
     }
+    */
 }

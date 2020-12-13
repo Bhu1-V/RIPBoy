@@ -1,5 +1,5 @@
-use crate::cpu::flags_register::{FlagsRegister};
-#[derive(Debug)]
+use crate::cpu::flags_register::FlagsRegister;
+#[derive(Debug, Default)]
 pub struct Registers {
     pub a: u8,
     pub b: u8,

@@ -22,8 +22,8 @@ pub struct CPU {
     registers: Registers,
     _rsv: Registers,
     pub bus: MemoryBus,
-    pc: u16,
-    sp: u16,
+    pub pc: u16,
+    pub sp: u16,
     is_halted: bool,
     m: u8, // Internal Clock of Last Instruction
 }
@@ -654,7 +654,10 @@ impl CPU {
                         LoadByteTarget::H => self.registers.h = source_value,
                         LoadByteTarget::L => self.registers.l = source_value,
                         LoadByteTarget::HLI | LoadByteTarget::HL | LoadByteTarget::HLD => {
-                            self.bus.write_bytes(self.registers.get_hl(), source_value)
+                            self.bus.write_bytes(self.registers.get_hl(), source_value);
+                            let mut b = self.registers.get_hl();
+                            b = b.wrapping_sub(1);
+                            self.registers.set_hl(b);
                         }
                         LoadByteTarget::BCV => {
                             self.bus.write_bytes(self.registers.get_bc(), source_value)
@@ -1664,7 +1667,7 @@ impl CPU {
                 self.pc.wrapping_add(1)
             }
 
-            _ => panic!("Support More Instructions."),
+            _ => panic!("Add instruction {:?}Support More Instructions.", instruction),
         }
     }
     // TO- DO : if error check whether all sp adds are correctly done.
@@ -1818,7 +1821,7 @@ impl CPU {
         } else {
             self.registers.a | value
         };
-        println!("from or = new_val = {} , 0x{:x}", new_val, new_val);
+        // println!("from or = new_val = {} , 0x{:x}", new_val, new_val);
         self.registers.f = FlagsRegister {
             zero: new_val == 0,
             carry: false,
@@ -2018,25 +2021,45 @@ impl CPU {
         self._set_lcd_status();
 
         if self._is_lcd_enabled() {
-            self.bus.scan_line_counter += cycles;
+            self.bus.scan_line_counter -= cycles;
         } else {
             return;
         }
 
-        if self.bus.scan_line_counter <= 0 {
-            self.bus.memory[0xFF44] += 1;
-            let current_line = self.bus.read_byte(0xFF44);
-
-            self.bus.scan_line_counter = 456;
-
-            if current_line == 144 {
-                self._request_interupt(0);
-            } else if current_line > 153 {
-                self.bus.memory[0xFF44] = 0;
-            } else if current_line < 144 {
-                self._draw_scan_line();
-            }
+        if self.bus.memory[0xFF44] > 0x99 {
+            self.bus.memory[0xFF44] = 0;
         }
+        if self.bus.scan_line_counter <= 0 {
+            self.draw_current_line();
+        }
+    }
+
+    pub fn draw_current_line(&mut self) {
+        if test_bit(self.bus.read_byte(0xFF40) , 7) == false {
+            return;
+        }
+
+        self.bus.memory[0xFF44] = self.bus.memory[0xFF44].wrapping_add(1);
+        self.bus.scan_line_counter = 456;
+
+        let scan_line = self.bus.read_byte(0xFF44);
+
+        if scan_line == 0x90  {
+            self.issue_v_blank();
+        }
+
+        if scan_line > 0x99 {
+            self.bus.memory[0xFF44] = 0;
+        }
+
+        if scan_line < 0x90 {
+            self._draw_scan_line()
+        }
+
+    }
+
+    pub fn issue_v_blank(&mut self) {
+        self._request_interupt(0);
     }
 }
 

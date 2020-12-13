@@ -1,4 +1,5 @@
 use super::target::*;
+#[derive(Debug)]
 pub enum Instruction {
     ADD(ArthemeticTarget),
     INC(IncDecTarget),

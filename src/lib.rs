@@ -7,9 +7,9 @@ mod gpu;
 mod useful_func;
 
 use cpu::CPU;
-use minifb::{self, Window};
+use minifb;
 
-struct Emulator{
+pub struct Emulator{
     cpu : CPU,
     window : minifb::Window,
 }
@@ -20,7 +20,7 @@ impl Emulator {
         let window = minifb::Window::new("GB", 160, 144, minifb::WindowOptions::default()).unwrap();
         Emulator {
             cpu : CPU::new(),
-            window : window, 
+            window, 
         }
     }
 
@@ -30,10 +30,10 @@ impl Emulator {
             Ok(()) => self.cpu.init_game(),
             Err(error) => println!("{}",error),
         }
-        self.update();
     }
 
     pub fn update(&mut self) {
+        println!("{}",self.cpu.pc);
         self.cpu.step();
         self.cpu.update_timers(4);
         self.cpu.update_graphics(4);
@@ -43,7 +43,7 @@ impl Emulator {
     }
 
     pub fn render(&mut self) {
-        self.window.update_with_buffer(&self.cpu.bus.gpu.buffer, 160, 140).unwrap();
+        self.window.update_with_buffer(&self.cpu.bus.gpu.buffer, 160, 144).unwrap();
     }
 
 }

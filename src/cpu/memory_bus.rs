@@ -30,7 +30,7 @@ pub struct MemoryBus {
     _gameLoaded :bool,
 
     // Catridge
-    _cartridge: [u8; MAX_CATRIDGE_SIZE],
+    _cartridge: Vec<u8>,
     _mbc1: bool,
     _mbc2: bool,
     _current_rom_bank: u8,
@@ -70,7 +70,7 @@ impl MemoryBus {
             _inbios : false,
             _gameLoaded : false,
 
-            _cartridge : [0 ; MAX_CATRIDGE_SIZE],
+            _cartridge : vec![0 ; MAX_CATRIDGE_SIZE],
             _mbc1 : false,
             _mbc2 : false,
             _current_rom_bank : 0,
@@ -183,7 +183,7 @@ impl MemoryBus {
     }
 
     pub fn create_ram_banks(&mut self,b:u8) {
-        for i in 0..17{
+        for _i in 0..b{
             let ram = Box::new([0u8;0x2000]);
             self._ram_banks.push(ram);
         }
@@ -200,17 +200,19 @@ impl MemoryBus {
         if self._gameLoaded {
             self.stop_game();
         }
-
+        
         self._gameLoaded = true;
-
+        
         self.memory = [0;0x10000];
-        self._cartridge = [0 ; MAX_CATRIDGE_SIZE];
-
+        self._cartridge = vec![0 ; MAX_CATRIDGE_SIZE];
+        
         let mut file = File::open("game.gb")?;
-        file.read_exact(&mut self._cartridge)?;
+        println!("{:?}",file.read(&mut self._cartridge));
 
-        // (self.memory).copy_from_slice(&self._cartridge[0..0x8001]);
-
+        
+        (self.memory[0..0x8001]).copy_from_slice(&self._cartridge[0..0x8001]);
+        
+        println!("{:?}",&self._cartridge[530..601]);
         // match self._cartridge[0x147] {
         //     1 | 2 | 3 => self._mbc1 = true,
         //     5 | 6 => self._mbc2 = true,
@@ -220,6 +222,7 @@ impl MemoryBus {
         //         self._mbc2 = false;
         //     }
         // }
+        // println!("mem = {:?}",&self.memory[0..101]);
 
         self._current_rom_bank = 1;
         // self._current_ram_bank = 0;
@@ -865,7 +868,7 @@ impl MemoryBus {
 
         if overflowed {
             self.divider_register = 0;
-            self.memory[0xff04] += 1;
+            self.memory[0xff04] = self.memory[0xff04].wrapping_add(1) ;
         } else {
             self.divider_register = new;
         }

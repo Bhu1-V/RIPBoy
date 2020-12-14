@@ -1112,6 +1112,8 @@ impl Instruction {
             // Loading Instructions. 15 + 8*6 = 63
 
             // checked LD BASIC TYPE
+
+            // B as Target
             0x40 => Some(Instruction::LD(LoadType::Byte(
                 LoadByteTarget::B,
                 LoadByteSource::B,
@@ -1145,6 +1147,7 @@ impl Instruction {
                 LoadByteSource::A,
             ))),
 
+            // C as target
             0x48 => Some(Instruction::LD(LoadType::Byte(
                 LoadByteTarget::C,
                 LoadByteSource::B,
@@ -1178,6 +1181,7 @@ impl Instruction {
                 LoadByteSource::A,
             ))),
 
+            // D as target
             0x50 => Some(Instruction::LD(LoadType::Byte(
                 LoadByteTarget::D,
                 LoadByteSource::B,
@@ -1211,6 +1215,7 @@ impl Instruction {
                 LoadByteSource::A,
             ))),
 
+            // E as Target
             0x58 => Some(Instruction::LD(LoadType::Byte(
                 LoadByteTarget::E,
                 LoadByteSource::B,
@@ -1244,6 +1249,7 @@ impl Instruction {
                 LoadByteSource::A,
             ))),
 
+            // H as Target
             0x60 => Some(Instruction::LD(LoadType::Byte(
                 LoadByteTarget::H,
                 LoadByteSource::B,
@@ -1277,6 +1283,7 @@ impl Instruction {
                 LoadByteSource::A,
             ))),
 
+            // L as target
             0x68 => Some(Instruction::LD(LoadType::Byte(
                 LoadByteTarget::L,
                 LoadByteSource::B,
@@ -1310,6 +1317,7 @@ impl Instruction {
                 LoadByteSource::A,
             ))),
 
+            // Hl as Target
             0x70 => Some(Instruction::LD(LoadType::Byte(
                 LoadByteTarget::HL,
                 LoadByteSource::B,
@@ -1340,6 +1348,7 @@ impl Instruction {
                 LoadByteSource::A,
             ))),
 
+            // A as target
             0x78 => Some(Instruction::LD(LoadType::Byte(
                 LoadByteTarget::A,
                 LoadByteSource::B,
@@ -1391,6 +1400,8 @@ impl Instruction {
                 LoadByteSource::A,
             ))),
 
+            // LD reg , n8
+
             0x06 => Some(Instruction::LD(LoadType::Byte(
                 LoadByteTarget::B,
                 LoadByteSource::D8,
@@ -1407,7 +1418,24 @@ impl Instruction {
                 LoadByteTarget::HL,
                 LoadByteSource::D8,
             ))),
-
+            
+            0x0E => Some(Instruction::LD(LoadType::Byte(
+                LoadByteTarget::C,
+                LoadByteSource::D8,
+            ))),
+            0x1E => Some(Instruction::LD(LoadType::Byte(
+                LoadByteTarget::E,
+                LoadByteSource::D8,
+            ))),
+            0x2E => Some(Instruction::LD(LoadType::Byte(
+                LoadByteTarget::L,
+                LoadByteSource::D8,
+            ))),
+            0x3E => Some(Instruction::LD(LoadType::Byte(
+                LoadByteTarget::A,
+                LoadByteSource::D8,
+            ))),
+            
             0x0A => Some(Instruction::LD(LoadType::Byte(
                 LoadByteTarget::A,
                 LoadByteSource::BCV,
@@ -1425,22 +1453,6 @@ impl Instruction {
                 LoadByteSource::HLD,
             ))),
 
-            0x0E => Some(Instruction::LD(LoadType::Byte(
-                LoadByteTarget::C,
-                LoadByteSource::D8,
-            ))),
-            0x1E => Some(Instruction::LD(LoadType::Byte(
-                LoadByteTarget::E,
-                LoadByteSource::D8,
-            ))),
-            0x2E => Some(Instruction::LD(LoadType::Byte(
-                LoadByteTarget::L,
-                LoadByteSource::D8,
-            ))),
-            0x3E => Some(Instruction::LD(LoadType::Byte(
-                LoadByteTarget::A,
-                LoadByteSource::D8,
-            ))),
 
             0xE2 => Some(Instruction::LD(LoadType::Byte(
                 LoadByteTarget::OC,

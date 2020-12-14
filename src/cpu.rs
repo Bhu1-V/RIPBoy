@@ -608,23 +608,38 @@ impl CPU {
                         LoadByteSource::E => self.registers.e,
                         LoadByteSource::H => self.registers.h,
                         LoadByteSource::L => self.registers.l,
-                        LoadByteSource::D8 => self._read_next_byte(),
-                        LoadByteSource::HL => self.bus.read_byte(self.registers.get_hl()),
-                        LoadByteSource::BCV => self.bus.read_byte(self.registers.get_bc()),
-                        LoadByteSource::DEV => self.bus.read_byte(self.registers.get_de()),
+                        LoadByteSource::HL => { 
+                            self.m += 4;
+                            self.bus.read_byte(self.registers.get_hl())
+                        }
+                        LoadByteSource::D8 => { 
+                            self.m += 4;
+                            self._read_next_byte()
+                        }
+                        LoadByteSource::BCV => {
+                            self.m += 4;
+                            self.bus.read_byte(self.registers.get_bc())
+                        }
+                        LoadByteSource::DEV => {
+                            self.m += 4;
+                            self.bus.read_byte(self.registers.get_de())
+                        }
                         LoadByteSource::HLI => {
+                            self.m += 4;
                             let r = self.bus.read_byte(self.registers.get_hl());
                             let n: u16 = self.registers.get_hl().wrapping_add(1);
                             self.registers.set_hl(n);
                             r
                         }
                         LoadByteSource::HLD => {
+                            self.m += 4;
                             let r = self.bus.read_byte(self.registers.get_hl());
                             let n: u16 = self.registers.get_hl().wrapping_sub(1);
                             self.registers.set_hl(n);
                             r
                         }
                         LoadByteSource::OC => {
+                            self.m += 4;
                             let u: u16 = 0xFF00;
                             let r = self
                                 .bus
@@ -632,13 +647,15 @@ impl CPU {
                             r
                         }
                         LoadByteSource::OByte => {
+                            self.m += 8;
                             let u: u16 = 0xFF00;
                             let b = self._read_next_byte() as u16;
                             let r = self.bus.read_byte(u.overflowing_add(b).0);
                             r
                         }
-                        // TO - DO test this.
+                        
                         LoadByteSource::OWord => {
+                            self.m += 12;
                             let w = self._read_next_word();
                             let r = self.bus.read_byte(w);
                             r
@@ -646,34 +663,53 @@ impl CPU {
                     };
 
                     match target {
-                        LoadByteTarget::A => self.registers.a = source_value,
-                        LoadByteTarget::B => self.registers.b = source_value,
-                        LoadByteTarget::C => self.registers.c = source_value,
-                        LoadByteTarget::D => self.registers.d = source_value,
-                        LoadByteTarget::E => self.registers.e = source_value,
-                        LoadByteTarget::H => self.registers.h = source_value,
-                        LoadByteTarget::L => self.registers.l = source_value,
-                        LoadByteTarget::HLI | LoadByteTarget::HL | LoadByteTarget::HLD => {
+                        LoadByteTarget::A => { self.registers.a = source_value; self.m += 4}
+                        LoadByteTarget::B => { self.registers.b = source_value; self.m += 4}
+                        LoadByteTarget::C => { self.registers.c = source_value; self.m += 4}
+                        LoadByteTarget::D => { self.registers.d = source_value; self.m += 4}
+                        LoadByteTarget::E => { self.registers.e = source_value; self.m += 4}
+                        LoadByteTarget::H => { self.registers.h = source_value; self.m += 4}
+                        LoadByteTarget::L => { self.registers.l = source_value; self.m += 4}
+                        LoadByteTarget::HL => {
+                            self.bus.write_bytes(self.registers.get_hl(), source_value);
+                            self.m += 8;
+                        }
+                        LoadByteTarget::HLI => {
+                            self.m += 8;
+                            self.bus.write_bytes(self.registers.get_hl(), source_value);
+                            let mut b = self.registers.get_hl();
+                            b = b.wrapping_add(1);
+                            self.registers.set_hl(b);
+                        }
+                        LoadByteTarget::HLD => {
+                            self.m += 8;
                             self.bus.write_bytes(self.registers.get_hl(), source_value);
                             let mut b = self.registers.get_hl();
                             b = b.wrapping_sub(1);
                             self.registers.set_hl(b);
                         }
                         LoadByteTarget::BCV => {
+                            self.m += 8;
                             self.bus.write_bytes(self.registers.get_bc(), source_value)
                         }
                         LoadByteTarget::DEV => {
+                            self.m += 8;
                             self.bus.write_bytes(self.registers.get_de(), source_value)
                         }
-                        LoadByteTarget::OC => self
+                        LoadByteTarget::OC => {
+                            self.m += 8;
+                            self
                             .bus
-                            .write_bytes(0xFF00 + self.registers.c as u16, source_value),
+                            .write_bytes(0xFF00 + self.registers.c as u16, source_value);
+                        }
                         LoadByteTarget::OByte => {
+                            self.m += 12;
                             let b = self.bus.read_byte(self.pc) as u16;
-                            self.bus.write_bytes(0xFF0 + b, source_value)
+                            self.bus.write_bytes(0xFF00 + b, source_value)
                         }
                         // todo : test this
                         LoadByteTarget::OWord => {
+                            self.m += 16;
                             let w = self._read_next_word();
                             self.bus.write_bytes(w, source_value)
                         }
@@ -1705,9 +1741,10 @@ impl CPU {
         self.bus.read_byte(self.pc)
     }
 
+    // LITTLE ENDIAN
     fn _read_next_word(&mut self) -> u16 {
         self.pc = self.pc.wrapping_add(2);
-        (self.bus.read_byte(self.pc - 1) as u16) << 8 | self.bus.read_byte(self.pc) as u16
+        (self.bus.read_byte(self.pc) as u16) << 8 | self.bus.read_byte(self.pc - 1) as u16
     }
 
     fn _pop(&mut self) -> u16 {

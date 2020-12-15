@@ -19,7 +19,7 @@ pub mod timer;
 #[derive(Debug)]
 pub struct CPU {
     clock: Clock,
-    registers: Registers,
+    pub registers: Registers,
     _rsv: Registers,
     pub bus: MemoryBus,
     pub pc: u16,
@@ -178,7 +178,7 @@ impl CPU {
 
                     _ => panic!("Reached Unreachable code"),
                 }
-                let new_value = self._sub(self.registers.a, value, false);
+                let new_value = self._sub(self.registers.a, value, false ,false);
                 self.registers.a = new_value;
                 self.m += 1;
 
@@ -266,9 +266,9 @@ impl CPU {
                     }
                     _ => panic!("Reached Unreachable code"),
                 }
-                let new_value = self._sub(self.registers.a, value, true);
+                let new_value = self._sub(self.registers.a, value, true, false);
                 self.registers.a = new_value;
-                let new_value = self._sub(self.registers.a, value, false);
+                let new_value = self._sub(self.registers.a, value, false, false);
                 self.m += 1;
 
                 self.registers.a = new_value;
@@ -311,7 +311,7 @@ impl CPU {
                     }
                     _ => panic!("Reached Unreachable code"),
                 }
-                self._sub(self.registers.a, value, false);
+                self._sub(self.registers.a, value, false, false);
                 self.m += 1;
 
                 return self.pc.wrapping_add(1);
@@ -441,6 +441,7 @@ impl CPU {
                 let new_value = self._or(value, true);
                 self.m += 1;
 
+
                 self.registers.a = new_value;
                 return self.pc.wrapping_add(1);
             }
@@ -532,31 +533,31 @@ impl CPU {
             Instruction::DEC(target) => {
                 match target {
                     IncDecTarget::A => {
-                        self.registers.a = self._sub(self.registers.a, 1, false);
+                        self.registers.a = self._sub(self.registers.a, 1, false,true);
                     }
                     IncDecTarget::B => {
-                        self.registers.b = self._sub(self.registers.b, 1, false);
+                        self.registers.b = self._sub(self.registers.b, 1, false,true);
                     }
                     IncDecTarget::C => {
-                        self.registers.c = self._sub(self.registers.c, 1, false);
+                        self.registers.c = self._sub(self.registers.c, 1, false,true);
                     }
                     IncDecTarget::D => {
-                        self.registers.d = self._sub(self.registers.d, 1, false);
+                        self.registers.d = self._sub(self.registers.d, 1, false,true);
                     }
                     IncDecTarget::E => {
-                        self.registers.e = self._sub(self.registers.e, 1, false);
+                        self.registers.e = self._sub(self.registers.e, 1, false,true);
                     }
                     IncDecTarget::H => {
-                        self.registers.h = self._sub(self.registers.h, 1, false);
+                        self.registers.h = self._sub(self.registers.h, 1, false,true);
                     }
                     IncDecTarget::L => {
-                        self.registers.l = self._sub(self.registers.l, 1, false);
+                        self.registers.l = self._sub(self.registers.l, 1, false,true);
                     }
                     IncDecTarget::HL2 => {
                         self.m = 2;
 
                         value = self.bus.read_byte(self.registers.get_hl());
-                        value = self._sub(value, 1, false);
+                        value = self._sub(value, 1, false,true);
                         self.bus.write_bytes(self.registers.get_hl(), value)
                     }
                     IncDecTarget::BC => {
@@ -583,10 +584,19 @@ impl CPU {
                         // TO-DO : Implement correctly
                         let (val, over_flowed) = self.registers.l.overflowing_sub(1);
                         self.registers.l = val;
+                        let mut half_carry = false;
                         if over_flowed {
                             let (val, _over_flowed) = self.registers.h.overflowing_sub(1);
                             self.registers.h = val;
+                            half_carry = true;
                         }
+
+                        self.registers.f = FlagsRegister {
+                            zero : self.registers.get_hl() == 0,
+                            subtract : true,
+                            carry : self.registers.f.carry,
+                            half_carry,
+                        };
                     }
 
                     IncDecTarget::SP => {
@@ -723,12 +733,45 @@ impl CPU {
                 LoadType::Word(target, source) => {
                     let source_value = match source {
                         LoadWordSource::D16 => self._read_next_word(),
-                        LoadWordSource::SP => self._read_next_word(),
-                        LoadWordSource::SPr8 => {
-                            let b = self._read_next_byte() as u16;
-                            b.wrapping_add(self.sp)
+                        LoadWordSource::SP => {
+                            self.m += 8;
+                            self._read_next_word()
                         }
-                        LoadWordSource::HL => self.registers.get_hl(),
+                        // DoubtFull 
+                        LoadWordSource::SPr8 => {
+                            let b:i8 = self._read_next_byte() as i8;
+                            if b < 0 {
+                                let res  = self.sp.wrapping_sub(b.abs() as u16 );
+                                
+                                self.registers.f.subtract = false;
+                                self.registers.f.zero = false;
+                                self.registers.f.half_carry = if res & 0x10 == 0x10 {true} else {false};
+
+                                if (self.sp as u8).overflowing_add(b as u8).1 {
+                                    self.registers.f.carry = true;
+                                }else {
+                                    self.registers.f.carry = false;
+                                }
+
+                                res
+
+                            }else {
+                                let res = self.sp.wrapping_sub(b.abs() as u16 );
+                                
+                                self.registers.f.subtract = false;
+                                self.registers.f.zero = false;
+                                self.registers.f.half_carry = if res & 0x10 == 0x10 {true} else {false};
+                                
+                                if (self.sp as u8).overflowing_add(b as u8).1 {
+                                    self.registers.f.carry = true;
+                                }
+                                res
+                            }
+                        }
+                        LoadWordSource::HL => {
+                            self.m = self.m.wrapping_sub(4);
+                            self.registers.get_hl()
+                        }
                         // _ => panic!("Load source error"),
                     };
                     // todo - add timing
@@ -741,12 +784,14 @@ impl CPU {
                             self.bus.write_bytes(source_value, (self.sp & 0xFF) as u8);
                         } // _ => panic!("add more"),
                     }
+                    self.m = self.m.wrapping_add(12);
                     self.pc.wrapping_add(1)
                 }
                 _ => panic!("Load ERROR"),
             },
 
             Instruction::JR(test) => {
+                println!("Jump Test here. = {}",!self.registers.f.zero);
                 let jump_condition = match test {
                     JumpTest::NotZero => !self.registers.f.zero,
                     JumpTest::NotCarry => !self.registers.f.carry,
@@ -1817,7 +1862,7 @@ impl CPU {
         new_val
     }
 
-    fn _sub(&mut self, reg: u8, val: u8, carry: bool) -> u8 {
+    fn _sub(&mut self, reg: u8, val: u8, carry: bool,dec : bool) -> u8 {
         let cy = if carry {
             if self.registers.f.carry == true {
                 1
@@ -1827,15 +1872,25 @@ impl CPU {
         } else {
             0
         };
+        println!("subing reg = {} with val = {} = {} ",reg,val,reg.wrapping_sub(1));
         let (new_val, over_flowed) = reg.overflowing_sub(val);
-        self.registers.f = FlagsRegister {
-            zero: new_val == 0,
-            subtract: true,
-            carry: over_flowed,
-            half_carry: ((reg & 0xF).overflowing_sub(val & 0xF)).0 > 0xF,
+        self.registers.f = if dec {
+            FlagsRegister {
+                zero: new_val == 0,
+                subtract: true,
+                carry: self.registers.f.carry,
+                half_carry: ((reg & 0xF).overflowing_sub(val & 0xF)).0 > 0xF,
+            }
+        } else {
+            FlagsRegister {
+                zero: new_val == 0,
+                subtract: true,
+                carry: over_flowed,
+                half_carry: ((reg & 0xF).overflowing_sub(val & 0xF)).0 > 0xF,
+            }
         };
         if carry {
-            self._sub(reg, cy, false)
+            return self._sub(reg, cy, false,dec);
         } else {
             new_val
         }
@@ -1858,20 +1913,27 @@ impl CPU {
         } else {
             self.registers.a | value
         };
-        // println!("from or = new_val = {} , 0x{:x}", new_val, new_val);
+        println!("from or fun = new_val = Decimal = {} , Hex = 0x{:x}", new_val, new_val);
         self.registers.f = FlagsRegister {
             zero: new_val == 0,
             carry: false,
             half_carry: false,
             subtract: false,
         };
+        println!("from or fun made flag reg = {:?}", self.registers.f);
         new_val
     }
 
     fn _jump_8bit(&mut self, should_jump: bool) -> u16 {
         if should_jump {
+            println!("Jump Condition Was True");
             let b = self._read_next_byte() as i8;
             self.m = 3;
+            println!("adding pc = {} with no. of jumps = {} = {}",
+                self.pc,
+                b,
+                self.pc.wrapping_add(b as u16)
+            );
             return self.pc.wrapping_add(b as u16);
         } else {
             self.m = 2;

@@ -89,54 +89,53 @@ impl CPU {
                         value = self.registers.l;
                     }
                     ArthemeticTarget::HL => {
-                        self.m = 1;
-
+                        self.m += 4;
                         value = self.bus.read_byte(self.registers.get_hl());
                     }
                     ArthemeticTarget::D8 => {
                         // TO-DO : Implement correctly
-                        self.m = 1;
+                        self.m += 4;
                         value = self._read_next_byte();
                     }
                     ArthemeticTarget::HLBC => {
                         let new_val =
-                            self._add_16bit(self.registers.get_hl(), self.registers.get_bc());
+                            self._add_16bit(self.registers.get_hl(), self.registers.get_bc(),false);
                         self.registers.set_hl(new_val);
-                        self.m = 3;
+                        self.m += 4;
                         return self.pc.wrapping_add(1);
                     }
                     ArthemeticTarget::HLDE => {
                         let new_val =
-                            self._add_16bit(self.registers.get_hl(), self.registers.get_de());
+                            self._add_16bit(self.registers.get_hl(), self.registers.get_de(),false);
                         self.registers.set_hl(new_val);
-                        self.m = 3;
+                        self.m += 4;
                         return self.pc.wrapping_add(1);
                     }
                     ArthemeticTarget::HLHL => {
                         let new_val =
-                            self._add_16bit(self.registers.get_hl(), self.registers.get_hl());
+                            self._add_16bit(self.registers.get_hl(), self.registers.get_hl(),false);
                         self.registers.set_hl(new_val);
-                        self.m = 3;
+                        self.m += 4;
                         return self.pc.wrapping_add(1);
                     }
                     ArthemeticTarget::HLSP => {
-                        let new_val = self._add_16bit(self.registers.get_hl(), self.sp);
+                        let new_val = self._add_16bit(self.registers.get_hl(), self.sp ,false);
                         self.registers.set_hl(new_val);
-                        self.m = 3;
+                        self.m += 4;
                         return self.pc.wrapping_add(1);
                     }
                     ArthemeticTarget::SP => {
                         // If ERROR CHECK THIS.
-                        let b = self._read_next_byte() as u16;
-                        let new_val = self._add_16bit(self.sp, b);
+                        let b = (( self._read_next_byte() as i8) as i16) as u16;
+                        let new_val = self._add_16bit(self.sp, b , true);
                         self.sp = new_val;
-                        self.m = 4;
+                        self.m += 4;
                         return self.pc.wrapping_add(1);
                     }
                 }
-                let new_value = self._add(self.registers.a, value, false);
+                let new_value = self._add(self.registers.a, value, false,false);
                 self.registers.a = new_value;
-                self.m += 1;
+                self.m += 4;
 
                 return self.pc.wrapping_add(1);
             }
@@ -165,14 +164,11 @@ impl CPU {
                         value = self.registers.l;
                     }
                     ArthemeticTarget::HL => {
-                        self.m = 1;
-
+                        self.m += 4;
                         value = self.bus.read_byte(self.registers.get_hl());
                     }
                     ArthemeticTarget::D8 => {
-                        // TO-DO : Implement correctly
-                        self.m = 1;
-
+                        self.m += 4;
                         value = self._read_next_byte();
                     }
 
@@ -180,7 +176,7 @@ impl CPU {
                 }
                 let new_value = self._sub(self.registers.a, value, false ,false);
                 self.registers.a = new_value;
-                self.m += 1;
+                self.m += 4;
 
                 return self.pc.wrapping_add(1);
             }
@@ -209,23 +205,21 @@ impl CPU {
                         value = self.registers.l;
                     }
                     ArthemeticTarget::HL => {
-                        self.m = 1;
-
+                        self.m += 4;
                         value = self.bus.read_byte(self.registers.get_hl());
                     }
                     ArthemeticTarget::D8 => {
                         // TO-DO : Implement correctly
-                        self.m = 1;
-
+                        self.m += 4;
                         value = self._read_next_byte();
                     }
                     _ => panic!("Reached Unreachable code"),
                 }
-                let new_value = self._add(self.registers.a, value, true);
+                let new_value = self._add(self.registers.a, value, true,false);
                 self.registers.a = new_value;
-                let new_value = self._add(self.registers.a, value, false);
+                let new_value = self._add(self.registers.a, value, false,false);
                 self.registers.a = new_value;
-                self.m += 1;
+                self.m += 4;
 
                 return self.pc.wrapping_add(1);
             }
@@ -254,13 +248,13 @@ impl CPU {
                         value = self.registers.l;
                     }
                     ArthemeticTarget::HL => {
-                        self.m = 1;
+                        self.m += 4;
 
                         value = self.bus.read_byte(self.registers.get_hl());
                     }
                     ArthemeticTarget::D8 => {
                         // TO-DO : Implement correctly
-                        self.m = 1;
+                        self.m += 4;
 
                         value = self._read_next_byte();
                     }
@@ -269,7 +263,7 @@ impl CPU {
                 let new_value = self._sub(self.registers.a, value, true, false);
                 self.registers.a = new_value;
                 let new_value = self._sub(self.registers.a, value, false, false);
-                self.m += 1;
+                self.m += 4;
 
                 self.registers.a = new_value;
                 return self.pc.wrapping_add(1);
@@ -299,20 +293,20 @@ impl CPU {
                         value = self.registers.l;
                     }
                     ArthemeticTarget::HL => {
-                        self.m = 1;
+                        self.m += 4;
 
                         value = self.bus.read_byte(self.registers.get_hl());
                     }
                     ArthemeticTarget::D8 => {
                         // TO-DO : Implement correctly
-                        self.m = 1;
+                        self.m += 4;
 
                         value = self._read_next_byte();
                     }
                     _ => panic!("Reached Unreachable code"),
                 }
                 self._sub(self.registers.a, value, false, false);
-                self.m += 1;
+                self.m += 4;
 
                 return self.pc.wrapping_add(1);
             }
@@ -341,16 +335,16 @@ impl CPU {
                         value = self.registers.l;
                     }
                     ArthemeticTarget::HL => {
-                        self.m = 1;
+                        self.m += 4;
                         value = self.bus.read_byte(self.registers.get_hl());
                     }
                     ArthemeticTarget::D8 => {
                         // TO-DO : Implement correctly
-                        self.m = 1;
+                        self.m += 4;
 
                         value = self._read_next_byte();
                     }
-                    _ => panic!("Reached Unreachable code"),
+                    _ => panic!("Reached Unreachable code at AND Inst." ),
                 }
                 let new_value = self._and(value);
                 self.registers.a = new_value;
@@ -383,20 +377,20 @@ impl CPU {
                         value = self.registers.l;
                     }
                     ArthemeticTarget::HL => {
-                        self.m = 1;
+                        self.m += 4;
 
                         value = self.bus.read_byte(self.registers.get_hl());
                     }
                     ArthemeticTarget::D8 => {
                         // TO-DO : Implement correctly
-                        self.m = 1;
+                        self.m += 4;
 
                         value = self._read_next_byte();
                     }
                     _ => panic!("Reached Unreachable code"),
                 }
                 let new_value = self._or(value, false);
-                self.m += 1;
+                self.m += 4;
 
                 self.registers.a = new_value;
                 return self.pc.wrapping_add(1);
@@ -426,20 +420,20 @@ impl CPU {
                         value = self.registers.l;
                     }
                     ArthemeticTarget::HL => {
-                        self.m = 1;
+                        self.m += 4;
 
                         value = self.bus.read_byte(self.registers.get_hl());
                     }
                     ArthemeticTarget::D8 => {
                         // TO-DO : Implement correctly
-                        self.m = 1;
+                        self.m += 4;
 
                         value = self._read_next_byte();
                     }
                     _ => panic!("Reached Unreachable code"),
                 }
                 let new_value = self._or(value, true);
-                self.m += 1;
+                self.m += 4;
 
 
                 self.registers.a = new_value;
@@ -464,35 +458,35 @@ impl CPU {
             Instruction::INC(target) => {
                 match target {
                     IncDecTarget::A => {
-                        self.registers.a = self._add(self.registers.a, 1, false);
+                        self.registers.a = self._add(self.registers.a, 1, false,true);
                     }
                     IncDecTarget::B => {
-                        self.registers.b = self._add(self.registers.b, 1, false);
+                        self.registers.b = self._add(self.registers.b, 1, false,true);
                     }
                     IncDecTarget::C => {
-                        self.registers.c = self._add(self.registers.c, 1, false);
+                        self.registers.c = self._add(self.registers.c, 1, false,true);
                     }
                     IncDecTarget::D => {
-                        self.registers.d = self._add(self.registers.d, 1, false);
+                        self.registers.d = self._add(self.registers.d, 1, false,true);
                     }
                     IncDecTarget::E => {
-                        self.registers.e = self._add(self.registers.e, 1, false);
+                        self.registers.e = self._add(self.registers.e, 1, false,true);
                     }
                     IncDecTarget::H => {
-                        self.registers.h = self._add(self.registers.h, 1, false);
+                        self.registers.h = self._add(self.registers.h, 1, false,true);
                     }
                     IncDecTarget::L => {
-                        self.registers.l = self._add(self.registers.l, 1, false);
+                        self.registers.l = self._add(self.registers.l, 1, false,true);
                     }
                     IncDecTarget::HL2 => {
-                        self.m = 2;
+                        self.m += 8;
 
                         value = self.bus.read_byte(self.registers.get_hl());
-                        value = self._add(value, 1, false);
+                        value = self._add(value, 1, false,true);
                         self.bus.write_bytes(self.registers.get_hl(), value)
                     }
                     IncDecTarget::BC => {
-                        // TO-DO : Implement correctly
+                        self.m += 4;
                         let (val, over_flowed) = self.registers.c.overflowing_add(1);
                         self.registers.c = val;
                         if over_flowed {
@@ -502,7 +496,7 @@ impl CPU {
                     }
 
                     IncDecTarget::DE => {
-                        // TO-DO : Implement correctly
+                        self.m += 4;
                         let (val, over_flowed) = self.registers.e.overflowing_add(1);
                         self.registers.e = val;
                         if over_flowed {
@@ -512,7 +506,7 @@ impl CPU {
                     }
 
                     IncDecTarget::HL => {
-                        // TO-DO : Implement correctly
+                        self.m += 4;
                         let (val, over_flowed) = self.registers.l.overflowing_add(1);
                         self.registers.l = val;
                         if over_flowed {
@@ -522,10 +516,11 @@ impl CPU {
                     }
 
                     IncDecTarget::SP => {
+                        self.m += 4;
                         self.sp = self.sp.wrapping_add(1);
                     }
                 }
-                self.m += 1;
+                self.m += 4;
 
                 return self.pc.wrapping_add(1);
             }
@@ -554,14 +549,14 @@ impl CPU {
                         self.registers.l = self._sub(self.registers.l, 1, false,true);
                     }
                     IncDecTarget::HL2 => {
-                        self.m = 2;
+                        self.m += 8;
 
                         value = self.bus.read_byte(self.registers.get_hl());
                         value = self._sub(value, 1, false,true);
                         self.bus.write_bytes(self.registers.get_hl(), value)
                     }
                     IncDecTarget::BC => {
-                        // TO-DO : Implement correctly
+                        self.m += 4;
                         let (val, over_flowed) = self.registers.c.overflowing_sub(1);
                         self.registers.c = val;
                         if over_flowed {
@@ -571,7 +566,7 @@ impl CPU {
                     }
 
                     IncDecTarget::DE => {
-                        // TO-DO : Implement correctly
+                        self.m += 4;
                         let (val, over_flowed) = self.registers.e.overflowing_sub(1);
                         self.registers.e = val;
                         if over_flowed {
@@ -581,7 +576,7 @@ impl CPU {
                     }
 
                     IncDecTarget::HL => {
-                        // TO-DO : Implement correctly
+                        self.m += 4;
                         let (val, over_flowed) = self.registers.l.overflowing_sub(1);
                         self.registers.l = val;
                         let mut half_carry = false;
@@ -590,20 +585,14 @@ impl CPU {
                             self.registers.h = val;
                             half_carry = true;
                         }
-
-                        self.registers.f = FlagsRegister {
-                            zero : self.registers.get_hl() == 0,
-                            subtract : true,
-                            carry : self.registers.f.carry,
-                            half_carry,
-                        };
                     }
 
                     IncDecTarget::SP => {
+                        self.m += 4;
                         self.sp = self.sp.wrapping_sub(1);
                     }
                 }
-                self.m += 1;
+                self.m += 4;
 
                 return self.pc.wrapping_add(1);
             }
@@ -745,7 +734,7 @@ impl CPU {
                                 
                                 self.registers.f.subtract = false;
                                 self.registers.f.zero = false;
-                                self.registers.f.half_carry = if res & 0x10 == 0x10 {true} else {false};
+                                self.registers.f.half_carry = if ((b as u8)&0xf).wrapping_sub((self.sp & 0xf) as u8) & 0x10 == 0x10 {true} else {false};
 
                                 if (self.sp as u8).overflowing_add(b as u8).1 {
                                     self.registers.f.carry = true;
@@ -756,15 +745,18 @@ impl CPU {
                                 res
 
                             }else {
-                                let res = self.sp.wrapping_sub(b.abs() as u16 );
+                                let res = self.sp.wrapping_add(b.abs() as u16 );
                                 
                                 self.registers.f.subtract = false;
                                 self.registers.f.zero = false;
-                                self.registers.f.half_carry = if res & 0x10 == 0x10 {true} else {false};
+                                self.registers.f.half_carry = if ((b as u8)&0xf).wrapping_add((self.sp & 0xf) as u8) & 0x10 == 0x10 {true} else {false};
                                 
                                 if (self.sp as u8).overflowing_add(b as u8).1 {
                                     self.registers.f.carry = true;
+                                }else {
+                                    self.registers.f.carry = false;
                                 }
+
                                 res
                             }
                         }
@@ -867,19 +859,24 @@ impl CPU {
                 self._return_(jump_condition)
             }
 
-            Instruction::NOP => self.pc.wrapping_add(1),
-
+            Instruction::NOP => {
+                self.m += 4;
+                self.pc.wrapping_add(1)
+            }
             Instruction::HALT => {
+                self.m += 4;
                 self.is_halted = true;
                 self.pc
             }
 
             Instruction::CCF => {
                 self.registers.f.toggle_carry();
+                self.m += 4;
                 self.pc.wrapping_add(1)
             }
             Instruction::SCF => {
                 self.registers.f.set_carry_true();
+                self.m += 4;
                 self.pc.wrapping_add(1)
             }
             Instruction::RRA => {
@@ -937,12 +934,15 @@ impl CPU {
 
             Instruction::CPL => {
                 self.registers.a = !(self.registers.a);
+
                 self.registers.f.half_carry = true;
                 self.registers.f.subtract = true;
+                
+                self.m += 4;
                 self.pc.wrapping_add(1)
             }
 
-            // todo : CHECK THIS LATER
+            // DAA = it will convert binary to decimal basically uses carry and half-carry and and six respectively
             Instruction::DAA => {
                 let a = self.registers.a;
                 let mut _f = self.registers.f.con();
@@ -956,8 +956,14 @@ impl CPU {
                     _f |= 0x10;
                     self.registers.f = FlagsRegister::from(_f);
                 }
-                self.m = 1;
+                self.m += 4;
 
+                self.pc.wrapping_add(1)
+            }
+
+            Instruction::STOP => {
+                self.m += 4;
+                self._stop();
                 self.pc.wrapping_add(1)
             }
 
@@ -1586,6 +1592,10 @@ impl CPU {
                         self.registers.f.zero = if value == 0 { true } else { false };
                     }
                 }
+                self.registers.f.subtract = false;
+                self.registers.f.half_carry = false;
+                self.registers.f.carry = false;
+
                 self.pc.wrapping_add(1)
             }
 
@@ -1827,9 +1837,9 @@ impl CPU {
         self.pc = next_pc;
     }
 
-    fn _add(&mut self, reg: u8, val: u8, carry: bool) -> u8 {
+    fn _add(&mut self, reg: u8, val: u8, carry: bool,inc:bool) -> u8 {
         let cy = if carry {
-            if self.registers.f.carry == true {
+            if self.registers.f.carry {
                 1
             } else {
                 0
@@ -1837,29 +1847,59 @@ impl CPU {
         } else {
             0
         };
+
         let (new_val, over_flowed) = reg.overflowing_add(val);
-        self.registers.f = FlagsRegister {
-            zero: new_val == 0,
-            subtract: false,
-            carry: over_flowed,
-            half_carry: ((reg & 0xF).overflowing_add(val & 0xF)).0 > 0xF,
+
+        self.registers.f = if inc {
+            FlagsRegister {
+                zero: new_val == 0,
+                subtract: false,
+                half_carry: ((reg & 0xF).wrapping_add(val & 0xF)) > 0xF,
+                ..self.registers.f
+            }
+        } else {
+            FlagsRegister {
+                zero: new_val == 0,
+                subtract: false,
+                carry: over_flowed,
+                half_carry: ((reg & 0xF).wrapping_add(val & 0xF)) > 0xF,
+            }
         };
+
         if carry {
-            self._add(reg, cy, false)
+            self._add(reg, cy, false,inc)
         } else {
             new_val
         }
     }
 
-    fn _add_16bit(&mut self, reg: u16, val: u16) -> u16 {
-        let (new_val, over_flowed) = reg.overflowing_add(val);
-        self.registers.f = FlagsRegister {
-            zero: self.registers.f.zero,
-            subtract: false,
-            carry: over_flowed,
-            half_carry: ((reg & 0xFF).overflowing_add(val & 0xFF)).0 > 0xFF,
+    fn _add_16bit(&mut self, reg: u16, val: u16, sp_add : bool) -> u16 {
+        let new_value;
+        self.registers.f = if sp_add {
+            let abs = (val as i16).abs() as u16;
+            let (new_val , over_flowed) = if (val as i16) < 0 {
+                reg.overflowing_sub(abs)
+            }else {
+                reg.overflowing_add(val)
+            };
+            new_value = new_val;
+            FlagsRegister {
+                zero: false,
+                subtract: false,
+                carry: over_flowed,
+                half_carry: ((reg & 0xFFF).overflowing_add(val & 0xFFF)).0 > 0xFFF,
+            }
+        }else {
+            let (new_val, over_flowed) = reg.overflowing_add(val);
+            new_value = new_val;
+            FlagsRegister {
+                zero: self.registers.f.zero,
+                subtract: false,
+                carry: over_flowed,
+                half_carry: ((reg & 0xFFF).overflowing_add(val & 0xFFF)).0 > 0xFFF,
+            }
         };
-        new_val
+        new_value
     }
 
     fn _sub(&mut self, reg: u8, val: u8, carry: bool,dec : bool) -> u8 {
@@ -1872,7 +1912,7 @@ impl CPU {
         } else {
             0
         };
-        println!("subing reg = {} with val = {} = {} ",reg,val,reg.wrapping_sub(1));
+        println!("subing reg = {} with val = {} = {} , Flag = {:?}",reg,val,reg.wrapping_sub(1),self.registers.f);
         let (new_val, over_flowed) = reg.overflowing_sub(val);
         self.registers.f = if dec {
             FlagsRegister {
@@ -1913,14 +1953,14 @@ impl CPU {
         } else {
             self.registers.a | value
         };
-        println!("from or fun = new_val = Decimal = {} , Hex = 0x{:x}", new_val, new_val);
+        // println!("from or fun = new_val = Decimal = {} , Hex = 0x{:x}", new_val, new_val);
         self.registers.f = FlagsRegister {
             zero: new_val == 0,
             carry: false,
             half_carry: false,
             subtract: false,
         };
-        println!("from or fun made flag reg = {:?}", self.registers.f);
+        // println!("from or fun made flag reg = {:?}", self.registers.f);
         new_val
     }
 
@@ -1939,6 +1979,10 @@ impl CPU {
             self.m = 2;
             return self.pc.wrapping_add(2);
         }
+    }
+
+    fn _stop(&self) {
+
     }
 
     fn _jump(&mut self, should_jump: bool, exception: bool) -> u16 {

@@ -967,6 +967,18 @@ impl CPU {
                 self.pc.wrapping_add(1)
             }
 
+            Instruction::DI => {
+                self.bus.interupt_master = false;
+                self.m += 4;
+                self.pc.wrapping_add(1)
+            }
+
+            Instruction::EI => {
+                self.bus.interupt_master = true;
+                self.m += 4;
+                self.pc.wrapping_add(1)
+            }
+
             Instruction::RLC(target) => {
                 match target {
                     PrefixTarget::B => {

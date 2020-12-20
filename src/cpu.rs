@@ -25,7 +25,9 @@ pub struct CPU {
     pub pc: u16,
     pub sp: u16,
     is_halted: bool,
-    m: u8, // Internal Clock of Last Instruction
+    pub m: u8, // Internal Clock of Last Instruction
+    pending_inrerupt_disabled : bool,
+    pending_interupt_enabled : bool,
 }
 
 impl CPU {
@@ -40,6 +42,8 @@ impl CPU {
             sp : 0,
             is_halted : false,
             m : 0,
+            pending_inrerupt_disabled : false,
+            pending_interupt_enabled : false,
         }
 
     }
@@ -50,12 +54,12 @@ impl CPU {
 
     pub fn reset_cpu(&mut self) {
         self.m = 0;
-        self.pc = 0x100;
+        self.pc = 0x0;
         self.registers.set_bc(0x0013);
         self.registers.set_de(0x00D8);
         self.registers.set_hl(0x014D);
         self.is_halted = false;
-        self.sp = 0xFFFE;
+        self.sp = 0x0;
         self.bus.reset();
     }
 
@@ -99,27 +103,27 @@ impl CPU {
                     }
                     ArthemeticTarget::HLBC => {
                         let new_val =
-                            self._add_16bit(self.registers.get_hl(), self.registers.get_bc(),false);
+                            self._add_16bit(self.registers.get_bc(),false);
                         self.registers.set_hl(new_val);
                         self.m += 4;
                         return self.pc.wrapping_add(1);
                     }
                     ArthemeticTarget::HLDE => {
                         let new_val =
-                            self._add_16bit(self.registers.get_hl(), self.registers.get_de(),false);
+                            self._add_16bit(self.registers.get_de(),false);
                         self.registers.set_hl(new_val);
                         self.m += 4;
                         return self.pc.wrapping_add(1);
                     }
                     ArthemeticTarget::HLHL => {
                         let new_val =
-                            self._add_16bit(self.registers.get_hl(), self.registers.get_hl(),false);
+                            self._add_16bit( self.registers.get_hl(),false);
                         self.registers.set_hl(new_val);
                         self.m += 4;
                         return self.pc.wrapping_add(1);
                     }
                     ArthemeticTarget::HLSP => {
-                        let new_val = self._add_16bit(self.registers.get_hl(), self.sp ,false);
+                        let new_val = self._add_16bit( self.sp ,false);
                         self.registers.set_hl(new_val);
                         self.m += 4;
                         return self.pc.wrapping_add(1);
@@ -127,16 +131,14 @@ impl CPU {
                     ArthemeticTarget::SP => {
                         // If ERROR CHECK THIS.
                         let b = (( self._read_next_byte() as i8) as i16) as u16;
-                        let new_val = self._add_16bit(self.sp, b , true);
+                        let new_val = self._add_16bit( b , true);
                         self.sp = new_val;
                         self.m += 4;
                         return self.pc.wrapping_add(1);
                     }
                 }
-                let new_value = self._add(self.registers.a, value, false,false);
-                self.registers.a = new_value;
+                self.registers.a = self._add_8bit(value);
                 self.m += 4;
-
                 return self.pc.wrapping_add(1);
             }
 
@@ -174,8 +176,8 @@ impl CPU {
 
                     _ => panic!("Reached Unreachable code"),
                 }
-                let new_value = self._sub(self.registers.a, value, false ,false);
-                self.registers.a = new_value;
+                self.registers.a = self._sub_8bit(value);
+                
                 self.m += 4;
 
                 return self.pc.wrapping_add(1);
@@ -209,16 +211,12 @@ impl CPU {
                         value = self.bus.read_byte(self.registers.get_hl());
                     }
                     ArthemeticTarget::D8 => {
-                        // TO-DO : Implement correctly
                         self.m += 4;
                         value = self._read_next_byte();
                     }
                     _ => panic!("Reached Unreachable code"),
                 }
-                let new_value = self._add(self.registers.a, value, true,false);
-                self.registers.a = new_value;
-                let new_value = self._add(self.registers.a, value, false,false);
-                self.registers.a = new_value;
+                self.registers.a = self._adc(value);
                 self.m += 4;
 
                 return self.pc.wrapping_add(1);
@@ -249,23 +247,18 @@ impl CPU {
                     }
                     ArthemeticTarget::HL => {
                         self.m += 4;
-
                         value = self.bus.read_byte(self.registers.get_hl());
                     }
                     ArthemeticTarget::D8 => {
                         // TO-DO : Implement correctly
                         self.m += 4;
-
                         value = self._read_next_byte();
                     }
                     _ => panic!("Reached Unreachable code"),
                 }
-                let new_value = self._sub(self.registers.a, value, true, false);
-                self.registers.a = new_value;
-                let new_value = self._sub(self.registers.a, value, false, false);
+                self.registers.a = self._sbc(value);
                 self.m += 4;
 
-                self.registers.a = new_value;
                 return self.pc.wrapping_add(1);
             }
 
@@ -294,18 +287,16 @@ impl CPU {
                     }
                     ArthemeticTarget::HL => {
                         self.m += 4;
-
                         value = self.bus.read_byte(self.registers.get_hl());
                     }
                     ArthemeticTarget::D8 => {
                         // TO-DO : Implement correctly
                         self.m += 4;
-
                         value = self._read_next_byte();
                     }
                     _ => panic!("Reached Unreachable code"),
                 }
-                self._sub(self.registers.a, value, false, false);
+                self._cp(value);
                 self.m += 4;
 
                 return self.pc.wrapping_add(1);
@@ -458,61 +449,46 @@ impl CPU {
             Instruction::INC(target) => {
                 match target {
                     IncDecTarget::A => {
-                        self.registers.a = self._add(self.registers.a, 1, false,true);
+                        self.registers.a = self._inc_dec_8bit(self.registers.a, 1);
                     }
                     IncDecTarget::B => {
-                        self.registers.b = self._add(self.registers.b, 1, false,true);
+                        self.registers.b = self._inc_dec_8bit(self.registers.b, 1);
                     }
                     IncDecTarget::C => {
-                        self.registers.c = self._add(self.registers.c, 1, false,true);
+                        self.registers.c = self._inc_dec_8bit(self.registers.c, 1);
                     }
                     IncDecTarget::D => {
-                        self.registers.d = self._add(self.registers.d, 1, false,true);
+                        self.registers.d = self._inc_dec_8bit(self.registers.d, 1);
                     }
                     IncDecTarget::E => {
-                        self.registers.e = self._add(self.registers.e, 1, false,true);
+                        self.registers.e = self._inc_dec_8bit(self.registers.e, 1);
                     }
                     IncDecTarget::H => {
-                        self.registers.h = self._add(self.registers.h, 1, false,true);
+                        self.registers.h = self._inc_dec_8bit(self.registers.h, 1);
                     }
                     IncDecTarget::L => {
-                        self.registers.l = self._add(self.registers.l, 1, false,true);
+                        self.registers.l = self._inc_dec_8bit(self.registers.l, 1);
                     }
                     IncDecTarget::HL2 => {
                         self.m += 8;
 
                         value = self.bus.read_byte(self.registers.get_hl());
-                        value = self._add(value, 1, false,true);
+                        value = self._inc_dec_8bit(value, 1);
                         self.bus.write_bytes(self.registers.get_hl(), value)
                     }
                     IncDecTarget::BC => {
                         self.m += 4;
-                        let (val, over_flowed) = self.registers.c.overflowing_add(1);
-                        self.registers.c = val;
-                        if over_flowed {
-                            let (val, _over_flowed) = self.registers.b.overflowing_add(1);
-                            self.registers.b = val;
-                        }
+                        self.registers.set_bc(self.registers.get_bc().wrapping_add(1));
                     }
 
                     IncDecTarget::DE => {
                         self.m += 4;
-                        let (val, over_flowed) = self.registers.e.overflowing_add(1);
-                        self.registers.e = val;
-                        if over_flowed {
-                            let (val, _over_flowed) = self.registers.d.overflowing_add(1);
-                            self.registers.d = val;
-                        }
+                        self.registers.set_de(self.registers.get_de().wrapping_add(1));
                     }
 
                     IncDecTarget::HL => {
                         self.m += 4;
-                        let (val, over_flowed) = self.registers.l.overflowing_add(1);
-                        self.registers.l = val;
-                        if over_flowed {
-                            let (val, _over_flowed) = self.registers.h.overflowing_add(1);
-                            self.registers.h = val;
-                        }
+                        self.registers.set_hl(self.registers.get_hl().wrapping_add(1));
                     }
 
                     IncDecTarget::SP => {
@@ -528,63 +504,46 @@ impl CPU {
             Instruction::DEC(target) => {
                 match target {
                     IncDecTarget::A => {
-                        self.registers.a = self._sub(self.registers.a, 1, false,true);
+                        self.registers.a = self._inc_dec_8bit(self.registers.a, -1,);
                     }
                     IncDecTarget::B => {
-                        self.registers.b = self._sub(self.registers.b, 1, false,true);
+                        self.registers.b = self._inc_dec_8bit(self.registers.b, -1,);
                     }
                     IncDecTarget::C => {
-                        self.registers.c = self._sub(self.registers.c, 1, false,true);
+                        self.registers.c = self._inc_dec_8bit(self.registers.c, -1,);
                     }
                     IncDecTarget::D => {
-                        self.registers.d = self._sub(self.registers.d, 1, false,true);
+                        self.registers.d = self._inc_dec_8bit(self.registers.d, -1,);
                     }
                     IncDecTarget::E => {
-                        self.registers.e = self._sub(self.registers.e, 1, false,true);
+                        self.registers.e = self._inc_dec_8bit(self.registers.e, -1,);
                     }
                     IncDecTarget::H => {
-                        self.registers.h = self._sub(self.registers.h, 1, false,true);
+                        self.registers.h = self._inc_dec_8bit(self.registers.h, -1,);
                     }
                     IncDecTarget::L => {
-                        self.registers.l = self._sub(self.registers.l, 1, false,true);
+                        self.registers.l = self._inc_dec_8bit(self.registers.l, -1,);
                     }
                     IncDecTarget::HL2 => {
                         self.m += 8;
 
                         value = self.bus.read_byte(self.registers.get_hl());
-                        value = self._sub(value, 1, false,true);
+                        value = self._inc_dec_8bit(value, -1);
                         self.bus.write_bytes(self.registers.get_hl(), value)
                     }
                     IncDecTarget::BC => {
                         self.m += 4;
-                        let (val, over_flowed) = self.registers.c.overflowing_sub(1);
-                        self.registers.c = val;
-                        if over_flowed {
-                            let (val, _over_flowed) = self.registers.b.overflowing_sub(1);
-                            self.registers.b = val;
-                        }
+                        self.registers.set_bc(self.registers.get_bc().wrapping_sub(1));
                     }
 
                     IncDecTarget::DE => {
                         self.m += 4;
-                        let (val, over_flowed) = self.registers.e.overflowing_sub(1);
-                        self.registers.e = val;
-                        if over_flowed {
-                            let (val, _over_flowed) = self.registers.d.overflowing_sub(1);
-                            self.registers.d = val;
-                        }
+                        self.registers.set_de(self.registers.get_de().wrapping_sub(1));
                     }
 
                     IncDecTarget::HL => {
                         self.m += 4;
-                        let (val, over_flowed) = self.registers.l.overflowing_sub(1);
-                        self.registers.l = val;
-                        let mut half_carry = false;
-                        if over_flowed {
-                            let (val, _over_flowed) = self.registers.h.overflowing_sub(1);
-                            self.registers.h = val;
-                            half_carry = true;
-                        }
+                        self.registers.set_hl(self.registers.get_hl().wrapping_sub(1));
                     }
 
                     IncDecTarget::SP => {
@@ -703,7 +662,7 @@ impl CPU {
                         }
                         LoadByteTarget::OByte => {
                             self.m += 12;
-                            let b = self.bus.read_byte(self.pc) as u16;
+                            let b = self._read_next_byte() as u16;
                             self.bus.write_bytes(0xFF00 + b, source_value)
                         }
                         // todo : test this
@@ -783,7 +742,7 @@ impl CPU {
             },
 
             Instruction::JR(test) => {
-                println!("Jump Test here. = {}",!self.registers.f.zero);
+                //tprintln!("Jump Test here. = {}",!self.registers.f.zero);
                 let jump_condition = match test {
                     JumpTest::NotZero => !self.registers.f.zero,
                     JumpTest::NotCarry => !self.registers.f.carry,
@@ -838,6 +797,10 @@ impl CPU {
             Instruction::CALL(test) => {
                 let jump_condition = match test {
                     JumpTest::NotZero => !self.registers.f.zero,
+                    JumpTest::Zero => self.registers.f.zero,
+                    JumpTest::Carry => self.registers.f.carry,
+                    JumpTest::NotCarry => !self.registers.f.carry,
+                    JumpTest::Always => true,
                     _ => panic!("TODO: support more conditions"),
                 };
                 self._call(jump_condition)
@@ -907,7 +870,7 @@ impl CPU {
 
             Instruction::RLA => {
                 let b = self.registers.f.get_carry();
-                if (self.registers.a & 0x80) == 1 {
+                if (self.registers.a >> 7) == 1 {
                     self.registers.f.set_carry(true);
                 } else {
                     self.registers.f.set_carry(false);
@@ -921,7 +884,7 @@ impl CPU {
 
             Instruction::RLCA => {
                 // let b = self.registers.f.get_carry();
-                if (self.registers.a & 0x80) == 1 {
+                if (self.registers.a >> 7) == 1 {
                     self.registers.f.set_carry(true);
                     self.registers.a <<= 1;
                     self.registers.a |= 1;
@@ -944,20 +907,27 @@ impl CPU {
 
             // DAA = it will convert binary to decimal basically uses carry and half-carry and and six respectively
             Instruction::DAA => {
-                let a = self.registers.a;
-                let mut _f = self.registers.f.con();
-                if ((_f & 0x20) != 0) || ((self.registers.a & 15) > 9) {
-                    self.registers.a += 6;
+                if self.registers.f.subtract {
+                    if self.registers.f.carry {
+                        self.registers.a = self.registers.a.wrapping_sub(0x60);
+                    }
+                    if self.registers.f.half_carry {
+                        self.registers.a = self.registers.a.wrapping_sub(0x06);
+                    }
+                } else {
+                    if self.registers.a > 0x99 || self.registers.f.carry {
+                        self.registers.a = self.registers.a.wrapping_add(0x60);
+                        self.registers.f.carry = true;
+                    }
+                    if (self.registers.a & 0x0F) > 0x09 || self.registers.f.half_carry {
+                        self.registers.a = self.registers.a.wrapping_add(0x06);
+                    } 
                 }
-                _f &= 0xEF;
-                self.registers.f = FlagsRegister::from(_f);
-                if (_f & 0x20) != 0 || (a > 0x99) {
-                    self.registers.a += 0x60;
-                    _f |= 0x10;
-                    self.registers.f = FlagsRegister::from(_f);
-                }
-                self.m += 4;
 
+                self.registers.f.zero = self.registers.a == 0;
+                self.registers.f.half_carry = false;
+
+                self.m += 4;
                 self.pc.wrapping_add(1)
             }
 
@@ -968,12 +938,14 @@ impl CPU {
             }
 
             Instruction::DI => {
-                self.bus.interupt_master = false;
                 self.m += 4;
+                self.pending_inrerupt_disabled = true;
                 self.pc.wrapping_add(1)
             }
 
             Instruction::EI => {
+                // self.pending_interupt_enabled = true;
+                println!("Called EI at {}",self.pc);
                 self.bus.interupt_master = true;
                 self.m += 4;
                 self.pc.wrapping_add(1)
@@ -1070,8 +1042,10 @@ impl CPU {
                         } else {
                             self.registers.f.set_carry(false);
                         }
+                        self.m += 8;
                     }
                 }
+                self.m += 8;
                 self.pc.wrapping_add(1)
             }
 
@@ -1079,7 +1053,7 @@ impl CPU {
                 match target {
                     PrefixTarget::B => {
                         let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
-                        if self.registers.b & 0x80 == 1 {
+                        if self.registers.b >> 7 == 1 {
                             self.registers.f.set_carry(true);
                         } else {
                             self.registers.f.set_carry(false);
@@ -1091,7 +1065,7 @@ impl CPU {
                     }
                     PrefixTarget::C => {
                         let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
-                        if self.registers.c & 0x80 == 1 {
+                        if self.registers.c >> 7 == 1 {
                             self.registers.f.set_carry(true);
                         } else {
                             self.registers.f.set_carry(false);
@@ -1103,7 +1077,7 @@ impl CPU {
                     }
                     PrefixTarget::D => {
                         let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
-                        if self.registers.d & 0x80 == 1 {
+                        if self.registers.d >> 7 == 1 {
                             self.registers.f.set_carry(true);
                         } else {
                             self.registers.f.set_carry(false);
@@ -1116,7 +1090,7 @@ impl CPU {
 
                     PrefixTarget::E => {
                         let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
-                        if self.registers.e & 0x80 == 1 {
+                        if self.registers.e >> 7 == 1 {
                             self.registers.f.set_carry(true);
                         } else {
                             self.registers.f.set_carry(false);
@@ -1129,7 +1103,7 @@ impl CPU {
 
                     PrefixTarget::H => {
                         let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
-                        if self.registers.h & 0x80 == 1 {
+                        if self.registers.h >> 7 == 1 {
                             self.registers.f.set_carry(true);
                         } else {
                             self.registers.f.set_carry(false);
@@ -1142,7 +1116,7 @@ impl CPU {
 
                     PrefixTarget::L => {
                         let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
-                        if self.registers.l & 0x80 == 1 {
+                        if self.registers.l >> 7 == 1 {
                             self.registers.f.set_carry(true);
                         } else {
                             self.registers.f.set_carry(false);
@@ -1155,7 +1129,7 @@ impl CPU {
 
                     PrefixTarget::A => {
                         let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
-                        if self.registers.a & 0x80 == 1 {
+                        if self.registers.a >> 7 == 1 {
                             self.registers.f.set_carry(true);
                         } else {
                             self.registers.f.set_carry(false);
@@ -1169,7 +1143,7 @@ impl CPU {
                     PrefixTarget::HLV => {
                         let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
                         let mut value = self.bus.read_byte(self.registers.get_hl());
-                        if value & 0x80 == 1 {
+                        if value >> 7 == 1 {
                             self.registers.f.set_carry(true);
                         } else {
                             self.registers.f.set_carry(false);
@@ -1179,8 +1153,10 @@ impl CPU {
                         if value == 0 {
                             self.registers.f.zero = true;
                         }
+                        self.m += 8;
                     }
                 }
+                self.m += 8;
                 self.pc.wrapping_add(1)
             }
 
@@ -1275,8 +1251,10 @@ impl CPU {
                         } else {
                             self.registers.f.set_carry(false);
                         }
+                        self.m += 8;
                     }
                 }
+                self.m += 8;
                 self.pc.wrapping_add(1)
             }
 
@@ -1384,15 +1362,17 @@ impl CPU {
                         if value == 0 {
                             self.registers.f.zero = true;
                         }
+                        self.m += 8;
                     }
                 }
+                self.m += 8;
                 self.pc.wrapping_add(1)
             }
 
             Instruction::SLA(target) => {
                 match target {
                     PrefixTarget::B => {
-                        if self.registers.b & 0x80 == 1 {
+                        if self.registers.b >> 7 == 1 {
                             self.registers.f.set_carry(true);
                         } else {
                             self.registers.f.set_carry(false);
@@ -1401,7 +1381,7 @@ impl CPU {
                         self.registers.f.zero = if self.registers.b == 0 { true } else { false };
                     }
                     PrefixTarget::C => {
-                        if self.registers.c & 0x80 == 1 {
+                        if self.registers.c >> 7 == 1 {
                             self.registers.f.set_carry(true);
                         } else {
                             self.registers.f.set_carry(false);
@@ -1410,7 +1390,7 @@ impl CPU {
                         self.registers.f.zero = if self.registers.c == 0 { true } else { false };
                     }
                     PrefixTarget::D => {
-                        if self.registers.d & 0x80 == 1 {
+                        if self.registers.d >> 7 == 1 {
                             self.registers.f.set_carry(true);
                         } else {
                             self.registers.f.set_carry(false);
@@ -1419,7 +1399,7 @@ impl CPU {
                         self.registers.f.zero = if self.registers.d == 0 { true } else { false };
                     }
                     PrefixTarget::E => {
-                        if self.registers.e & 0x80 == 1 {
+                        if self.registers.e >> 7 == 1 {
                             self.registers.f.set_carry(true);
                         } else {
                             self.registers.f.set_carry(false);
@@ -1428,7 +1408,7 @@ impl CPU {
                         self.registers.f.zero = if self.registers.e == 0 { true } else { false };
                     }
                     PrefixTarget::H => {
-                        if self.registers.h & 0x80 == 1 {
+                        if self.registers.h >> 7 == 1 {
                             self.registers.f.set_carry(true);
                         } else {
                             self.registers.f.set_carry(false);
@@ -1437,7 +1417,7 @@ impl CPU {
                         self.registers.f.zero = if self.registers.h == 0 { true } else { false };
                     }
                     PrefixTarget::L => {
-                        if self.registers.l & 0x80 == 1 {
+                        if self.registers.l >> 7 == 1 {
                             self.registers.f.set_carry(true);
                         } else {
                             self.registers.f.set_carry(false);
@@ -1446,7 +1426,7 @@ impl CPU {
                         self.registers.f.zero = if self.registers.l == 0 { true } else { false };
                     }
                     PrefixTarget::A => {
-                        if self.registers.a & 0x80 == 1 {
+                        if self.registers.a >> 7 == 1 {
                             self.registers.f.set_carry(true);
                         } else {
                             self.registers.f.set_carry(false);
@@ -1456,7 +1436,7 @@ impl CPU {
                     }
                     PrefixTarget::HLV => {
                         let mut value = self.bus.read_byte(self.registers.get_hl());
-                        if value & 0x80 == 1 {
+                        if value >> 7 == 1 {
                             self.registers.f.set_carry(true);
                         } else {
                             self.registers.f.set_carry(false);
@@ -1464,9 +1444,10 @@ impl CPU {
                         value = value << 1;
                         self.bus.write_bytes(self.registers.get_hl(), value);
                         self.registers.f.zero = if value == 0 { true } else { false };
+                        self.m += 8;
                     }
                 }
-
+                self.m += 8;
                 self.pc.wrapping_add(1)
             }
 
@@ -1545,9 +1526,10 @@ impl CPU {
                         value = value >> 1;
                         self.bus.write_bytes(self.registers.get_hl(), value);
                         self.registers.f.zero = if value == 0 { true } else { false };
+                        self.m += 8;
                     }
                 }
-
+                self.m += 8;
                 self.pc.wrapping_add(1)
             }
 
@@ -1602,12 +1584,13 @@ impl CPU {
                         value = down | upper;
                         self.bus.write_bytes(self.registers.get_hl(), value);
                         self.registers.f.zero = if value == 0 { true } else { false };
+                        self.m += 8;
                     }
                 }
                 self.registers.f.subtract = false;
                 self.registers.f.half_carry = false;
                 self.registers.f.carry = false;
-
+                self.m += 8;
                 self.pc.wrapping_add(1)
             }
 
@@ -1670,8 +1653,10 @@ impl CPU {
                         self.registers.f.carry = cy;
                         value = value | x;
                         self.bus.write_bytes(self.registers.get_hl(), value);
+                        self.m += 8;
                     }
                 }
+                self.m += 8;
                 self.pc.wrapping_add(1)
             }
 
@@ -1684,7 +1669,10 @@ impl CPU {
                     SourceRegister::E => self.registers.e,
                     SourceRegister::H => self.registers.h,
                     SourceRegister::L => self.registers.l,
-                    SourceRegister::HLV => self.bus.read_byte(self.registers.get_hl()),
+                    SourceRegister::HLV => {
+                        self.m += 8;
+                        self.bus.read_byte(self.registers.get_hl())
+                    }
                 };
                 let mask = match target_bit {
                     TargetBit::B0 => (!(source >> 0)) & 1,
@@ -1699,6 +1687,7 @@ impl CPU {
                 self.registers.f.half_carry = true;
                 self.registers.f.subtract = false;
                 self.registers.f.zero = if mask == 1 { true } else { false };
+                self.m += 8;
                 self.pc.wrapping_add(1)
             }
 
@@ -1711,7 +1700,10 @@ impl CPU {
                     SourceRegister::E => self.registers.e,
                     SourceRegister::H => self.registers.h,
                     SourceRegister::L => self.registers.l,
-                    SourceRegister::HLV => self.bus.read_byte(self.registers.get_hl()),
+                    SourceRegister::HLV => {
+                        self.m += 8;
+                        self.bus.read_byte(self.registers.get_hl())
+                    }
                 };
                 source = match target_bit {
                     TargetBit::B0 => source | 0b_0000_0001,
@@ -1733,6 +1725,7 @@ impl CPU {
                     SourceRegister::L => self.registers.l = source,
                     SourceRegister::HLV => self.bus.write_bytes(self.registers.get_hl(), source),
                 };
+                self.m += 8;
                 self.pc.wrapping_add(1)
             }
 
@@ -1745,7 +1738,10 @@ impl CPU {
                     SourceRegister::E => self.registers.e,
                     SourceRegister::H => self.registers.h,
                     SourceRegister::L => self.registers.l,
-                    SourceRegister::HLV => self.bus.read_byte(self.registers.get_hl()),
+                    SourceRegister::HLV => {
+                        self.m += 8;
+                        self.bus.read_byte(self.registers.get_hl())
+                    }
                 };
                 source = match target_bit {
                     TargetBit::B0 => source & 0b_1111_1110,
@@ -1767,6 +1763,7 @@ impl CPU {
                     SourceRegister::L => self.registers.l = source,
                     SourceRegister::HLV => self.bus.write_bytes(self.registers.get_hl(), source),
                 };
+                self.m += 8;
                 self.pc.wrapping_add(1)
             }
 
@@ -1821,6 +1818,7 @@ impl CPU {
         let msb = self.bus.read_byte(self.sp) as u16;
         self.sp = self.sp.wrapping_add(1);
 
+        // println!("poping SP = {}",(msb << 8) | lsb);
         (msb << 8) | lsb
     }
 
@@ -1831,121 +1829,154 @@ impl CPU {
         self.sp = self.sp.wrapping_sub(1);
         self.bus.write_bytes(self.sp, (value & 0x00FF) as u8);
     }
-
+    /// fetch - exectue the Opcode
     pub fn step(&mut self) {
+        //tprintln!("doing fetch - exectue the Opcode");
+        self.m = 0;
         let mut instruction_byte = self.bus.read_byte(self.pc);
+        // if self.pc == 152 { println!("Instruction Byte = 0x{:x}",instruction_byte); }
         let prefixed = instruction_byte == 0xCB;
         if prefixed {
-            instruction_byte = self.bus.read_byte(self.pc + 1);
+            self.pc = self.pc.wrapping_add(1);
+            instruction_byte = self.bus.read_byte(self.pc);
         }
-
-        let next_pc = if let Some(instruction) = Instruction::from_byte(instruction_byte, prefixed)
-        {
-            self._execute(instruction)
-        } else {
-            panic!("Invaild Instruction {:x}", instruction_byte);
-        };
-
-        self.pc = next_pc;
-    }
-
-    fn _add(&mut self, reg: u8, val: u8, carry: bool,inc:bool) -> u8 {
-        let cy = if carry {
-            if self.registers.f.carry {
-                1
-            } else {
-                0
-            }
-        } else {
-            0
-        };
-
-        let (new_val, over_flowed) = reg.overflowing_add(val);
-
-        self.registers.f = if inc {
-            FlagsRegister {
-                zero: new_val == 0,
-                subtract: false,
-                half_carry: ((reg & 0xF).wrapping_add(val & 0xF)) > 0xF,
-                ..self.registers.f
-            }
-        } else {
-            FlagsRegister {
-                zero: new_val == 0,
-                subtract: false,
-                carry: over_flowed,
-                half_carry: ((reg & 0xF).wrapping_add(val & 0xF)) > 0xF,
-            }
-        };
-
-        if carry {
-            self._add(reg, cy, false,inc)
-        } else {
-            new_val
-        }
-    }
-
-    fn _add_16bit(&mut self, reg: u16, val: u16, sp_add : bool) -> u16 {
-        let new_value;
-        self.registers.f = if sp_add {
-            let abs = (val as i16).abs() as u16;
-            let (new_val , over_flowed) = if (val as i16) < 0 {
-                reg.overflowing_sub(abs)
-            }else {
-                reg.overflowing_add(val)
-            };
-            new_value = new_val;
-            FlagsRegister {
-                zero: false,
-                subtract: false,
-                carry: over_flowed,
-                half_carry: ((reg & 0xFFF).overflowing_add(val & 0xFFF)).0 > 0xFFF,
-            }
+        
+        if !(self.is_halted) {
+            //tprintln!("cpu check 1");
+            let next_pc = if let Some(instruction) = Instruction::from_byte(instruction_byte, prefixed)
+                {
+                    // if self.pc > 0xFF { 
+                    //     // for i in 0..16 {
+                    //     //     if i == 0 {
+                    //     //         for k in 0..16 {
+                    //     //             if k == 0 {print!("     ");}
+                    //     //             print!("{:>4X} ",k);
+                    //     //         }
+                    //     //         print!("\n");
+                    //     //     }
+                    //     //     for j in 0..16 {
+                    //     //         if j == 0 { print!("{:>4X} ",i); }
+                    //     //         print!("{:>4X} ",&self.bus.memory[(16 * i)+j]);
+                    //     //     }
+                    //     //     print!("\n");
+                    //     // }
+                    //     println!("  A   B   C   D   E   F   H   L  PC         SP");
+                    //     println!("{:?} {} {:X}",self.registers,self.pc,self.sp);
+                    //     println!("Executing Instruction = {:?} of {:x}",instruction,instruction_byte);
+                    // }
+                    self._execute(instruction)  
+                } else {
+                    panic!("Invaild Instruction {:x}", instruction_byte);
+                };
+            self.pc = next_pc;
         }else {
-            let (new_val, over_flowed) = reg.overflowing_add(val);
-            new_value = new_val;
-            FlagsRegister {
-                zero: self.registers.f.zero,
-                subtract: false,
-                carry: over_flowed,
-                half_carry: ((reg & 0xFFF).overflowing_add(val & 0xFFF)).0 > 0xFFF,
+            //tprintln!("cpu check 2");
+            self.m += 4;
+            self.pc = self._execute(Instruction::HALT);
+        }
+
+        if self.pending_inrerupt_disabled {
+            if self.bus.read_byte(self.pc - 1) != 0xF3 {
+                self.pending_inrerupt_disabled = false;
+                self.bus.interupt_master = false;
             }
-        };
-        new_value
+        }
+
+        if self.pending_interupt_enabled {
+            if self.bus.read_byte(self.pc - 1) != 0xFB {
+                self.pending_interupt_enabled = false;
+                self.bus.interupt_master = true;
+            }
+        }
     }
 
-    fn _sub(&mut self, reg: u8, val: u8, carry: bool,dec : bool) -> u8 {
-        let cy = if carry {
-            if self.registers.f.carry == true {
-                1
-            } else {
-                0
-            }
-        } else {
-            0
+    fn _add_8bit (&mut self , val : u8) -> u8 {
+        let (new_val , over_flowed) = self.registers.a.overflowing_add(val);
+        self.registers.f = FlagsRegister {
+            zero : new_val == 0,
+            subtract : false,
+            half_carry : (self.registers.a & 0x0F) + (val & 0x0F) & 0x10 == 0x10,
+            carry : over_flowed,
         };
-        println!("subing reg = {} with val = {} = {} , Flag = {:?}",reg,val,reg.wrapping_sub(1),self.registers.f);
-        let (new_val, over_flowed) = reg.overflowing_sub(val);
-        self.registers.f = if dec {
-            FlagsRegister {
-                zero: new_val == 0,
-                subtract: true,
-                carry: self.registers.f.carry,
-                half_carry: ((reg & 0xF).overflowing_sub(val & 0xF)).0 > 0xF,
-            }
+        new_val
+    }
+
+    fn _adc (&mut self , mut val : u8) -> u8 {
+        let cy = if self.registers.f.carry {1} else {0};
+
+        self.registers.f.half_carry = ((self.registers.a & 0xF).wrapping_add(val & 0xF).wrapping_add(cy)) & 0x10 == 0x10;
+
+        val = val.wrapping_add(cy);
+        let (new_val , overflowed ) = self.registers.a.overflowing_add(val);
+
+        self.registers.f.zero = new_val == 0;
+        self.registers.f.subtract = false;
+        self.registers.f.carry = overflowed;
+
+        new_val
+    }
+
+    fn _add_16bit(&mut self, val: u16, sp_add : bool) -> u16 {
+        let new_val = if !sp_add {
+            let (v, over_flowed) = self.registers.get_hl().overflowing_add(val);
+            self.registers.f = FlagsRegister {
+                zero : self.registers.f.zero,
+                subtract : false,
+                carry : over_flowed,
+                half_carry : (self.registers.get_hl() & 0xFFF).wrapping_add(val & 0xFFF) & 0x1000 == 0x1000,
+            };
+            v
         } else {
-            FlagsRegister {
-                zero: new_val == 0,
-                subtract: true,
-                carry: over_flowed,
-                half_carry: ((reg & 0xF).overflowing_sub(val & 0xF)).0 > 0xF,
+            let offset = val as i16;
+            self.registers.f.half_carry = (((self.sp & 0x0F) as u8).wrapping_add((offset & 0x0F) as u8) & 0x10) == 0x10;
+            self.registers.f.carry = ((self.sp & 0xFF).wrapping_add(val & 0xFF) & 0x100) == 0x100;
+            self.registers.f.subtract = false;
+            self.registers.f.zero = false;
+            
+            if offset > 0 {
+                self.sp.wrapping_add(val)
+            }else {
+                self.sp.wrapping_sub(offset.abs() as u16)
             }
         };
-        if carry {
-            return self._sub(reg, cy, false,dec);
-        } else {
-            new_val
-        }
+        new_val 
+    }
+
+    fn _sub_8bit(&mut self , val : u8) -> u8 {
+        let (new_val , overflowed ) = self.registers.a.overflowing_sub(val);
+
+        self.registers.f = FlagsRegister {
+            zero : new_val == 0,
+            subtract : true,
+            half_carry : (self.registers.a & 0xF).wrapping_sub(val & 0xF) & 0x10 == 0x10,
+            carry : overflowed,
+        };
+
+        new_val
+    }
+
+    fn _sbc(&mut self , mut val : u8 ) -> u8 {
+        let cy = if self.registers.f.carry {1} else {0};
+        
+        self.registers.f.subtract = true;
+        self.registers.f.half_carry = ((self.registers.a & 0xF).wrapping_sub(val & 0xF).wrapping_sub(cy) & 0x10) == 0x10;
+        
+        val = val.wrapping_add(cy);
+        let (new_val , overflowed) = self.registers.a.overflowing_sub(val);
+        self.registers.f.carry = overflowed;
+
+        new_val
+    }
+
+    fn _cp (&mut self, value : u8) {
+        let (new_val , overflowed) = self.registers.a.overflowing_sub(value);
+
+        self.registers.f = FlagsRegister {
+            zero : new_val == 0,
+            subtract : true,
+            half_carry : (self.registers.a & 0xF).wrapping_sub(value & 0xF) & 0x10 == 0x10,
+            carry : overflowed,
+        };
     }
 
     fn _and(&mut self, value: u8) -> u8 {
@@ -1976,16 +2007,30 @@ impl CPU {
         new_val
     }
 
+    fn _inc_dec_8bit(&mut self,val : u8,offset:i8) -> u8{
+        let new_val = val.wrapping_add(offset as u8);
+
+        self.registers.f.zero = new_val == 0;
+        self.registers.f.subtract = offset == -1;
+        self.registers.f.half_carry = if offset > 0 {
+            (val & 0x0F).wrapping_add(1) & 0x10 == 0x10
+        } else {
+            (val & 0x0F).wrapping_sub(1) & 0x10 == 0x10
+        };
+        new_val
+    }
+
     fn _jump_8bit(&mut self, should_jump: bool) -> u16 {
         if should_jump {
-            println!("Jump Condition Was True");
-            let b = self._read_next_byte() as i8;
+            //tprintln!("Jump Condition Was True");
+            let mut b = self._read_next_byte() as i8;
+            b += 1;
             self.m = 3;
-            println!("adding pc = {} with no. of jumps = {} = {}",
+            if self.pc == 152 {println!("adding pc = {} with no. of jumps = {} = {}",
                 self.pc,
                 b,
                 self.pc.wrapping_add(b as u16)
-            );
+            );}
             return self.pc.wrapping_add(b as u16);
         } else {
             self.m = 2;
@@ -1999,6 +2044,7 @@ impl CPU {
 
     fn _jump(&mut self, should_jump: bool, exception: bool) -> u16 {
         if should_jump & !(exception) {
+            self.m += 16;
             // Gameboy is little endian so read pc + 2 as most significant bit
             // and pc + 1 as least significant bit
             let least_significant_byte = self.bus.read_byte(self.pc + 1) as u16;
@@ -2029,6 +2075,7 @@ impl CPU {
         // todo implement Inturupt.
         let mut req = self.bus.read_byte(0xFF0F);
         req = bit_set(req, i);
+        // println!("requesting interupt {} wrote at {}",i,req);
         self.bus.write_bytes(0xFF0F, req);
     }
 
@@ -2039,10 +2086,13 @@ impl CPU {
     }
 
     pub fn update_timers(&mut self, cycles: u32) {
+        //tprintln!("updating timers.");
+
         self.bus.do_divider_register(cycles);
 
         if self.bus.clock_enabled() {
-            self.bus.mem_timer_counter -= cycles;
+
+            self.bus.mem_timer_counter = self.bus.mem_timer_counter.wrapping_sub(cycles as i32);
 
             if self.bus.mem_timer_counter <= 0 {
                 self.bus.set_clock_freq();
@@ -2054,19 +2104,22 @@ impl CPU {
                     self._request_interupt(2);
                 } else {
                     let tma_val = self.bus.read_byte(TIMA as u16);
-                    self.bus.write_bytes(TIMA as u16, tma_val + 1);
+                    self.bus.write_bytes(TIMA as u16, tma_val.wrapping_add(1));
                 }
             }
         }
     }
 
     pub fn do_interupts(&mut self) {
+        // println!("updating interupts.");
+
         if self.bus.interupt_master == true {
             let req = self.bus.read_byte(0xFF0F);
             let enabled = self.bus.read_byte(0xFFFF);
+            // println!("DEIoing Interupts req = {:X} , enable = {:X}",req,enabled);
 
             if req > 0 {
-                for i in 1..6 {
+                for i in 0..5 {
                     if test_bit(req, i) {
                         if test_bit(enabled, i) {
                             self._service_interupt(i);
@@ -2091,7 +2144,9 @@ impl CPU {
             2 => 0x50,
             4 => 0x60,
             _ => panic!("unhandled.. interupt bit"),
-        }
+        };
+        println!("served Interupt by changing pc = {}",self.pc);
+        self.m += 20;
     }
 
     pub fn _set_lcd_status(&mut self) {
@@ -2145,52 +2200,81 @@ impl CPU {
             self._request_interupt(1);
         }
 
-        if current_line == self.bus.read_byte(0xFF45) {
+        if self.bus.read_byte(0xFF44) == self.bus.read_byte(0xFF45) {
             status = bit_set(status, 2);
             if test_bit(status, 6) {
                 self._request_interupt(1);
-            } else {
-                status = bit_reset(status, 2);
             }
-            self.bus.write_bytes(0xFF41, status);
+        }else {
+            status = bit_reset(status, 2);
         }
+        self.bus.write_bytes(0xFF41, status);
     }
 
     pub fn _is_lcd_enabled(&mut self) -> bool {
-        test_bit(self.bus.read_byte(0xFF40), 7)
+        let lcd_status = self.bus.read_byte(0xFF40);
+        //tprintln!("check lcd_staus = {:08b} ", lcd_status);
+        test_bit(lcd_status, 7)
     }
 
     pub fn _draw_scan_line(&mut self) {
+        // println!("check 13");
         let control = self.bus.read_byte(0xFF40);
 
         if test_bit(control, 0) {
+            // println!("check 14");
             self.bus.render_tiles(control);
         }
 
         if test_bit(control, 1) {
+            println!("check 15");
             self.bus.render_sprites(control);
         }
     }
 
-    pub fn update_graphics(&mut self, cycles: u32) {
+    pub fn update_graphics(&mut self, cycles: i16) -> bool {
+        //tprintln!("updating graphics.");
         self._set_lcd_status();
 
         if self._is_lcd_enabled() {
-            self.bus.scan_line_counter -= cycles;
+            //tprintln!("check 1");
+            // println!("SLC = {} , cycles = {}",self.bus.scan_line_counter,cycles);
+            self.bus.scan_line_counter = self.bus.scan_line_counter.wrapping_sub(cycles as i16);
+            //tprintln!("after sub SLC = {}",self.bus.scan_line_counter);
         } else {
-            return;
+            //tprintln!("check 2");
+            return false;
         }
 
-        if self.bus.memory[0xFF44] > 0x99 {
-            self.bus.memory[0xFF44] = 0;
-        }
+        // if self.bus.memory[0xFF44] > 0x99 {
+        //     self.bus.memory[0xFF44] = 0;
+        // }
         if self.bus.scan_line_counter <= 0 {
-            self.draw_current_line();
+            //tprintln!("check 3");
+            self.bus.memory[0xFF44] = self.bus.memory[0xFF44].wrapping_add(1);
+            let current_line = self.bus.read_byte(0xFF44);
+
+            self.bus.scan_line_counter = 456;
+
+            if current_line == 144 {
+                // println!("check 4");
+                self._request_interupt(0);
+            } else if current_line > 153 {
+                // println!("check 5");
+                self.bus.memory[0xFF44] = 0;
+                return true;
+            } else if current_line < 144 {
+                // println!("check 6");
+                self._draw_scan_line()
+            }
         }
+        false
     }
 
     pub fn draw_current_line(&mut self) {
+        println!("check 7");
         if test_bit(self.bus.read_byte(0xFF40) , 7) == false {
+            //tprintln!("check 8");
             return;
         }
 
@@ -2200,20 +2284,24 @@ impl CPU {
         let scan_line = self.bus.read_byte(0xFF44);
 
         if scan_line == 0x90  {
+            println!("check 9");
             self.issue_v_blank();
         }
 
         if scan_line > 0x99 {
+            println!("check 10");
             self.bus.memory[0xFF44] = 0;
         }
 
         if scan_line < 0x90 {
+            println!("check 11");
             self._draw_scan_line()
         }
 
     }
 
     pub fn issue_v_blank(&mut self) {
+        //tprintln!("check 12");
         self._request_interupt(0);
     }
 }

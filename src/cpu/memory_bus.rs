@@ -35,23 +35,25 @@ pub struct MemoryBus {
     _mbc2: bool,
     _current_rom_bank: u8,
 
-    _ram_banks: Vec<Box<[u8;0x2000]>>,
+    _ram_banks: [u8;0x8000],
     _current_ram_bank: u8,
 
-    _enable_ram: bool,
+    _enable_ram : bool,
+    _ram_mode: u8,
     _rom_banking: bool,
 
     // Memory Regions
     _bios: [u8; 256],
+    _first_rom : [u8; 256],
 
     pub memory: [u8; 0x10000],
     pub gpu: GPU,
     pub interupt_master: bool,
 
-    pub mem_timer_counter: u32,
+    pub mem_timer_counter: i32,
     pub divider_register: u8,
 
-    pub scan_line_counter: u32,
+    pub scan_line_counter: i16,
     pub joypad_state: u8,
 }
 
@@ -60,6 +62,28 @@ impl fmt::Debug for MemoryBus {
         f.debug_struct("memory")
             .field("mem", &self.memory[0])
             .finish()
+    }
+}
+
+impl MemoryBus {
+    pub fn print_mem_snap(&self){
+        let mut s:String = String::from("");
+        for i in 0..0x1000 {
+            if i == 0 {
+                for k in 0..16 {
+                    if k == 0 {s+="     ";}
+                    s.push_str(&format!("{:>4X} ",k));
+                }
+                s += "\n";
+            }
+            for j in 0..16 {
+                if j == 0 { s.push_str(&format!("{:>4X} ",i)); }
+                s.push_str(&format!("{:>4X} ",&self.memory[(16 * i)+j]));
+            }
+            s+="\n";
+        }
+
+        print!("{}",s);
     }
 }
 
@@ -75,29 +99,40 @@ impl MemoryBus {
             _mbc2 : false,
             _current_rom_bank : 0,
 
-            _ram_banks : Vec::new(),
+            _ram_banks : [0;0x8000],
             _current_ram_bank : 0,
+            _ram_mode : 0,
             _enable_ram : false,
             _rom_banking : true,
 
-            _bios : [
-                0x31, 0xFE, 0xFF, 0xAF, 0x21, 0xFF, 0x9F, 0x32, 0xCB, 0x7C, 0x20, 0xFB, 0x21, 0x26, 0xFF, 0x0E,
-                0x11, 0x3E, 0x80, 0x32, 0xE2, 0x0C, 0x3E, 0xF3, 0xE2, 0x32, 0x3E, 0x77, 0x77, 0x3E, 0xFC, 0xE0,
-                0x47, 0x11, 0x04, 0x01, 0x21, 0x10, 0x80, 0x1A, 0xCD, 0x95, 0x00, 0xCD, 0x96, 0x00, 0x13, 0x7B,
-                0xFE, 0x34, 0x20, 0xF3, 0x11, 0xD8, 0x00, 0x06, 0x08, 0x1A, 0x13, 0x22, 0x23, 0x05, 0x20, 0xF9,
-                0x3E, 0x19, 0xEA, 0x10, 0x99, 0x21, 0x2F, 0x99, 0x0E, 0x0C, 0x3D, 0x28, 0x08, 0x32, 0x0D, 0x20,
-                0xF9, 0x2E, 0x0F, 0x18, 0xF3, 0x67, 0x3E, 0x64, 0x57, 0xE0, 0x42, 0x3E, 0x91, 0xE0, 0x40, 0x04,
-                0x1E, 0x02, 0x0E, 0x0C, 0xF0, 0x44, 0xFE, 0x90, 0x20, 0xFA, 0x0D, 0x20, 0xF7, 0x1D, 0x20, 0xF2,
-                0x0E, 0x13, 0x24, 0x7C, 0x1E, 0x83, 0xFE, 0x62, 0x28, 0x06, 0x1E, 0xC1, 0xFE, 0x64, 0x20, 0x06,
-                0x7B, 0xE2, 0x0C, 0x3E, 0x87, 0xF2, 0xF0, 0x42, 0x90, 0xE0, 0x42, 0x15, 0x20, 0xD2, 0x05, 0x20,
-                0x4F, 0x16, 0x20, 0x18, 0xCB, 0x4F, 0x06, 0x04, 0xC5, 0xCB, 0x11, 0x17, 0xC1, 0xCB, 0x11, 0x17,
-                0x05, 0x20, 0xF5, 0x22, 0x23, 0x22, 0x23, 0xC9, 0xCE, 0xED, 0x66, 0x66, 0xCC, 0x0D, 0x00, 0x0B,
-                0x03, 0x73, 0x00, 0x83, 0x00, 0x0C, 0x00, 0x0D, 0x00, 0x08, 0x11, 0x1F, 0x88, 0x89, 0x00, 0x0E,
-                0xDC, 0xCC, 0x6E, 0xE6, 0xDD, 0xDD, 0xD9, 0x99, 0xBB, 0xBB, 0x67, 0x63, 0x6E, 0x0E, 0xEC, 0xCC,
-                0xDD, 0xDC, 0x99, 0x9F, 0xBB, 0xB9, 0x33, 0x3E, 0x3c, 0x42, 0xB9, 0xA5, 0xB9, 0xA5, 0x42, 0x4C,
-                0x21, 0x04, 0x01, 0x11, 0xA8, 0x00, 0x1A, 0x13, 0xBE, 0x20, 0xFE, 0x23, 0x7D, 0xFE, 0x34, 0x20,
-                0xF5, 0x06, 0x19, 0x78, 0x86, 0x23, 0x05, 0x20, 0xFB, 0x86, 0x20, 0xFE, 0x3E, 0x01, 0xE0, 0x50
-              ],
+
+
+
+
+
+
+            // _bios : [
+            //     0x31, 0xFE, 0xFF, 0xAF, 0x21, 0xFF, 0x9F, 0x32, 0xCB, 0x7C, 0x20, 0xFB, 0x21, 0x26, 0xFF, 0x0E,
+            //     0x11, 0x3E, 0x80, 0x32, 0xE2, 0x0C, 0x3E, 0xF3, 0xE2, 0x32, 0x3E, 0x77, 0x77, 0x3E, 0xFC, 0xE0,
+            //     0x47, 0x11, 0x04, 0x01, 0x21, 0x10, 0x80, 0x1A, 0xCD, 0x95, 0x00, 0xCD, 0x96, 0x00, 0x13, 0x7B,
+            //     0xFE, 0x34, 0x20, 0xF3, 0x11, 0xD8, 0x00, 0x06, 0x08, 0x1A, 0x13, 0x22, 0x23, 0x05, 0x20, 0xF9,
+            //     0x3E, 0x19, 0xEA, 0x10, 0x99, 0x21, 0x2F, 0x99, 0x0E, 0x0C, 0x3D, 0x28, 0x08, 0x32, 0x0D, 0x20,
+            //     0xF9, 0x2E, 0x0F, 0x18, 0xF3, 0x67, 0x3E, 0x64, 0x57, 0xE0, 0x42, 0x3E, 0x91, 0xE0, 0x40, 0x04,
+            //     0x1E, 0x02, 0x0E, 0x0C, 0xF0, 0x44, 0xFE, 0x90, 0x20, 0xFA, 0x0D, 0x20, 0xF7, 0x1D, 0x20, 0xF2,
+            //     0x0E, 0x13, 0x24, 0x7C, 0x1E, 0x83, 0xFE, 0x62, 0x28, 0x06, 0x1E, 0xC1, 0xFE, 0x64, 0x20, 0x06,
+            //     0x7B, 0xE2, 0x0C, 0x3E, 0x87, 0xF2, 0xF0, 0x42, 0x90, 0xE0, 0x42, 0x15, 0x20, 0xD2, 0x05, 0x20,
+            //     0x4F, 0x16, 0x20, 0x18, 0xCB, 0x4F, 0x06, 0x04, 0xC5, 0xCB, 0x11, 0x17, 0xC1, 0xCB, 0x11, 0x17,
+            //     0x05, 0x20, 0xF5, 0x22, 0x23, 0x22, 0x23, 0xC9, 0xCE, 0xED, 0x66, 0x66, 0xCC, 0x0D, 0x00, 0x0B,
+            //     0x03, 0x73, 0x00, 0x83, 0x00, 0x0C, 0x00, 0x0D, 0x00, 0x08, 0x11, 0x1F, 0x88, 0x89, 0x00, 0x0E,
+            //     0xDC, 0xCC, 0x6E, 0xE6, 0xDD, 0xDD, 0xD9, 0x99, 0xBB, 0xBB, 0x67, 0x63, 0x6E, 0x0E, 0xEC, 0xCC,
+            //     0xDD, 0xDC, 0x99, 0x9F, 0xBB, 0xB9, 0x33, 0x3E, 0x3c, 0x42, 0xB9, 0xA5, 0xB9, 0xA5, 0x42, 0x4C,
+            //     0x21, 0x04, 0x01, 0x11, 0xA8, 0x00, 0x1A, 0x13, 0xBE, 0x20, 0xFE, 0x23, 0x7D, 0xFE, 0x34, 0x20,
+            //     0xF5, 0x06, 0x19, 0x78, 0x86, 0x23, 0x05, 0x20, 0xFB, 0x86, 0x20, 0xFE, 0x3E, 0x01, 0xE0, 0x50,
+            //   ],
+
+            _bios : [49,254,255,175,33,255,159,50,203,124,32,251,33,38,255,14,17,62,128,50,226,12,62,243,226,50,62,119,119,62,252,224,71,17,168,0,33,16,128,26,205,149,0,205,150,0,19,123,254,52,32,243,17,216,0,6,8,26,19,34,35,5,32,249,62,25,234,16,153,33,47,153,14,12,61,40,8,50,13,32,249,46,15,24,243,103,62,100,87,224,66,62,145,224,64,4,30,2,14,12,240,68,254,144,32,250,13,32,247,29,32,242,14,19,36,124,30,131,254,98,40,6,30,193,254,100,32,6,123,226,12,62,135,226,240,66,144,224,66,21,32,210,5,32,79,22,32,24,203,79,6,4,197,203,17,23,193,203,17,23,5,32,245,34,35,34,35,201,0,0,0,13,0,9,17,9,137,57,8,201,0,11,0,3,0,12,204,204,0,15,0,0,0,0,236,204,236,204,221,221,153,153,152,137,238,251,103,99,110,14,204,221,31,159,136,136,0,0,0,0,0,0,0,0,33,168,0,17,168,0,26,19,190,32,254,35,125,254,52,32,245,6,25,120,134,35,5,32,251,134,32,254,62,1,224,80],
+
+              _first_rom : [0 ; 256],
 
               memory : [0 ; 0x10000],
 
@@ -121,7 +156,7 @@ impl MemoryBus {
         self.divider_register = 0;
         self._current_ram_bank = 0;
 
-        self.memory[0xFF00] = 0xFF ;
+        self.memory[0xFF00] = 0xFF   ;
         self.memory[0xFF05] = 0x00   ;
         self.memory[0xFF06] = 0x00   ;
         self.memory[0xFF07] = 0x00   ;
@@ -142,7 +177,7 @@ impl MemoryBus {
         self.memory[0xFF23] = 0xBF   ;
         self.memory[0xFF24] = 0x77   ;
         self.memory[0xFF25] = 0xF3   ;
-        self.memory[0xFF26] = 0xF1	;
+        self.memory[0xFF26] = 0xF1	 ;
         self.memory[0xFF40] = 0x91   ;
         self.memory[0xFF42] = 0x00   ;
         self.memory[0xFF43] = 0x00   ;
@@ -155,8 +190,10 @@ impl MemoryBus {
         self.memory[0xFFFF] = 0x00   ;
         self.scan_line_counter = 456;
 
+        self._ram_mode = 0;
         self._enable_ram = false;
         self._mbc2 = false;
+        self.interupt_master = false;
 
         match self._cartridge[0x147] {
             1 | 2 | 3 => self._mbc1 = true,
@@ -166,35 +203,15 @@ impl MemoryBus {
                 return false;
             }
         }
-
-        let mut num_rams_banks = 0;
-
-        match self._cartridge[0x149] {
-            0 => num_rams_banks = 0,
-            1 | 2 => num_rams_banks = 1,
-            3 => num_rams_banks = 4,
-            4 => num_rams_banks = 16,
-            _ => return false,
-        }
-
-        self.create_ram_banks(num_rams_banks);
         
         true
     }
 
-    pub fn create_ram_banks(&mut self,b:u8) {
-        for _i in 0..b{
-            let ram = Box::new([0u8;0x2000]);
-            self._ram_banks.push(ram);
-        }
 
-        for i in 1..0x2000 {
-            self._ram_banks[0][i] = self.memory[0xA000 + i];
-        }
-    }
     pub fn stop_game(&mut self) {
         self._gameLoaded = false;
     }
+
     pub fn load_catridge(&mut self) -> io::Result<()> {
 
         if self._gameLoaded {
@@ -207,22 +224,14 @@ impl MemoryBus {
         self._cartridge = vec![0 ; MAX_CATRIDGE_SIZE];
         
         let mut file = File::open("game.gb")?;
-        println!("{:?}",file.read(&mut self._cartridge));
-
+        println!("read file size = {:?}",file.read(&mut self._cartridge));
         
         (self.memory[0..0x8001]).copy_from_slice(&self._cartridge[0..0x8001]);
+        (self._first_rom[0..256]).copy_from_slice(&self.memory[0..256]);
+        (self.memory[0..256]).copy_from_slice(&self._bios);
         
-        println!("{:?}",&self._cartridge[530..601]);
-        // match self._cartridge[0x147] {
-        //     1 | 2 | 3 => self._mbc1 = true,
-        //     5 | 6 => self._mbc2 = true,
-
-        //     _ => {
-        //         self._mbc1 = false;
-        //         self._mbc2 = false;
-        //     }
-        // }
-        // println!("mem = {:?}",&self.memory[0..101]);
+        self.memory[0xFF41] = 1;
+        self.memory[0xFF43] = 0;
 
         self._current_rom_bank = 1;
         // self._current_ram_bank = 0;
@@ -230,7 +239,10 @@ impl MemoryBus {
         Ok(())
     }
 
-    pub fn render_tiles(&mut self, control: u8) {
+    pub fn render_tiles(&mut self) {
+
+        let control = self.memory[0xFF40];
+
         let mut tile_data: u16 = 0;
         let mut background_memory: u16 = 0;
         let mut unsig = true;
@@ -238,7 +250,7 @@ impl MemoryBus {
         let scroll_Y = self.read_byte(0xFF42);
         let scroll_X = self.read_byte(0xFF43);
         let window_Y = self.read_byte(0xFF4A);
-        let window_X = self.read_byte(0xFF4B) - 7;
+        let window_X = self.read_byte(0xFF4B).wrapping_sub(7);
 
         let mut using_window = false;
 
@@ -255,7 +267,7 @@ impl MemoryBus {
             unsig = false;
         }
 
-        if false == using_window {
+        if !using_window {
             if test_bit(control, 3) {
                 background_memory = 0x9C00;
             } else {
@@ -272,15 +284,15 @@ impl MemoryBus {
         let mut yPos: u8 = 0;
 
         if !using_window {
-            yPos = scroll_Y + self.read_byte(0xFF44);
+            yPos = scroll_Y.wrapping_add(self.read_byte(0xFF44));
         } else {
-            yPos = self.read_byte(0xFF44) - window_Y;
+            yPos = self.read_byte(0xFF44).wrapping_sub(window_Y);
         }
 
-        let tile_row: u16 = (yPos as u16 / 8).wrapping_mul(32);
+        let tile_row: u16 = (yPos.wrapping_div(8) as u16).wrapping_mul(32);
 
-        for pixel in 0..160 {
-            let mut x_pos = pixel + scroll_X;
+        for pixel in 0u8..160 {
+            let mut x_pos = pixel.wrapping_add(scroll_X);
 
             if using_window {
                 if pixel >= window_X {
@@ -288,15 +300,15 @@ impl MemoryBus {
                 }
             }
 
-            let tile_col: u16 = x_pos as u16 / 8;
+            let tile_col: u16 = x_pos as u16 >> 3;
             let tile_num: i16;
 
             let tile_address: u16 = background_memory + tile_row + tile_col;
 
             if unsig {
-                tile_num = self.read_byte(tile_address) as i16;
+                tile_num = (self.read_byte(tile_address) as u8) as i16;
             } else {
-                tile_num = self.read_byte(tile_address) as i16;
+                tile_num = (self.read_byte(tile_address) as i8) as i16;
             }
 
             let mut tile_location: u16 = tile_data;
@@ -313,7 +325,7 @@ impl MemoryBus {
             let data_2 = self.read_byte(tile_location + line as u16 + 1);
 
             let mut color_bit = x_pos % 8;
-            color_bit -= 7;
+            color_bit = color_bit.wrapping_sub(7);
             color_bit = color_bit.wrapping_mul((-1 as i8) as u8);
 
             let mut color_num = if test_bit(data_2, color_bit) { 1 } else { 0 };
@@ -352,52 +364,57 @@ impl MemoryBus {
                 }
             }
 
-            let finaly = self.read_byte(0xFF44);
+            let finaly:u16 = self.read_byte(0xFF44) as u16;
 
             if (finaly < 0) || (finaly > 143) || (pixel < 0) || (pixel > 159) {
                 continue;
             }
 
             // ADD RGB INTO SCREEN BUFFER
-            let index = 160 * pixel + finaly;
+            let index : u16 = 160 * finaly + pixel as u16;
             self.gpu.buffer[index as usize] = from_u8_rgb(red, blue, green);
         }
     }
 
     pub fn render_sprites(&mut self, control: u8) {
+
         let mut use8x16 = false;
         if test_bit(control, 2) {
             use8x16 = true;
         }
 
-        for sprite in 0..40 {
-            let index = sprite * 4;
-            let y_pos = self.read_byte(0xFE00 + index) - 16;
-            let x_pos = self.read_byte(0xFE00 + index + 1) - 8;
-            let tile_location = self.read_byte(0xFE00 + index + 2);
-            let attributes = self.read_byte(0xFE00 + index + 3);
+        for sprite in 0u8..40 {
+            let index = sprite.wrapping_mul(4);
+            let y_pos = self.read_byte(0xFE00 + index as u16).wrapping_sub(16);
+            let x_pos = self.read_byte(0xFE00 + index as u16 + 1).wrapping_sub(8);
+            let tile_location = self.read_byte(0xFE00u16.wrapping_add(index as u16).wrapping_add(2));
+            let attributes = self.read_byte(0xFE00u16.wrapping_add(index as u16).wrapping_add(3));
 
             let y_flip = test_bit(attributes, 6);
             let x_flip = test_bit(attributes, 5);
 
             let scan_line = self.read_byte(0xFF44);
-            let mut ysize: u8 = 8;
-            if use8x16 {
-                ysize = 16;
-            }
 
-            if (scan_line >= y_pos) && (scan_line < (y_pos + ysize)) {
+            let ysize: u8 = if use8x16 {
+                16
+            }else {
+                8
+            };
+
+            
+
+            if (scan_line >= y_pos) && (scan_line < (y_pos.wrapping_add(ysize))) {
                 let mut line = scan_line - y_pos;
 
                 if y_flip {
-                    line -= ysize;
-                    line = line.wrapping_mul((-1 as i8) as u8);
+                    line = line.wrapping_sub(ysize);
+                    line = !(line).wrapping_add(1);
                 }
 
                 line = line.wrapping_mul(2);
 
-                let data_address: u16 =
-                    (0x8000 + ((tile_location as u16).wrapping_mul(16))) + line as u16;
+                // check again
+                let data_address: u16 = 0x8000 + (((tile_location as u16) & 0x00FF).wrapping_mul(16)) + (line as u16 & 0x00FF) ;
 
                 let data_1 = self.read_byte(data_address);
                 let data_2 = self.read_byte(data_address + 1);
@@ -407,7 +424,7 @@ impl MemoryBus {
 
                     if x_flip {
                         color_bit -= 7;
-                        color_bit = color_bit.wrapping_mul(-1);
+                        color_bit *= -1;
                     }
 
                     let mut color_num = if test_bit(data_2, color_bit as u8) {
@@ -465,13 +482,14 @@ impl MemoryBus {
                     let mut x_pix = 0 - tile_pixel;
                     x_pix += 7;
 
-                    let pixel = x_pos + x_pix as u8;
+                    let pixel:i32 = x_pos as i32 + x_pix ;
 
                     if (scan_line < 0) || (scan_line > 143) || (pixel < 0) || (pixel > 159) {
                         continue;
                     }
 
-                    let index = 160 * pixel + scan_line;
+                    let index = 160 * scan_line as i32 + pixel;
+
                     self.gpu.buffer[index as usize] = from_u8_rgb(red, blue, green);
                 }
             }
@@ -520,61 +538,65 @@ impl MemoryBus {
         res
     }
 
-    pub fn handle_banking(&mut self, address: usize, value: u8) {
+    pub fn handle_banking(&mut self, address: usize, mut value: u8) {
         if address < 0x2000 {
             if self._mbc1 || self._mbc2 {
                 self.do_ram_bank_enable(address, value);
             }
-        } else if (address >= 0x200) && (address < 0x4000) {
+        } else if (address >= 0x2000) && (address < 0x4000) {
             if self._mbc1 || self._mbc2 {
                 self.do_change_lo_rom_bank(value);
             }
         } else if (address >= 0x4000) && (address < 0x6000) {
             if self._mbc1 {
-                if self._rom_banking {
-                    self.do_change_hi_rom_bank(value);
+                value &= 0x3;
+                if self._ram_mode == 0{
+                    self._current_rom_bank &= 0x1F;
+                    self._current_rom_bank |= value << 5;
                 } else {
-                    self.do_ram_bank_change(value);
+                    self._current_ram_bank = value;
                 }
+
             }
         } else if (address >= 0x6000) && (address < 0x8000) {
+            self._ram_mode = value & 1;
             if self._mbc1 {
-                self.do_change_rom_ram_mode(value);
+                // self.do_change_rom_ram_mode(value);
+                if self._ram_mode == 0 {
+                    self._current_ram_bank = 0;
+                } else {
+                    self._current_rom_bank &= 0x1F;
+                }
             }
         }
     }
 
     pub fn do_ram_bank_enable(&mut self, address: usize, value: u8) {
         if self._mbc2 {
-            if (address & 0b_0001_0000) >> 4 == 1 {
+            if (address & 0b_0000_0001_0000_0000) >> 8 != 1 {
                 return;
             }
         }
 
         let test_val = value & 0xF;
 
-        if test_val == 0xA {
-            self._enable_ram = true;
-        } else if test_val == 0x0 {
-            self._enable_ram = false;
-        }
+        self._enable_ram = test_val == 0xA;
     }
 
-    pub fn do_change_lo_rom_bank(&mut self, value: u8) {
+    pub fn do_change_lo_rom_bank(&mut self, mut value: u8) {
         if self._mbc2 {
-            self._current_rom_bank = value & 0xF;
-            if self._current_rom_bank == 0 {
-                self._current_rom_bank += 1;
-            }
-            return;
-        }
+            value &= 0xf;
+            value = if value == 0 {1} else {value};
+            self._current_rom_bank = value;
 
-        let lower5 = value & 31;
-        self._current_rom_bank &= 224; // turning off lower 5 bits
-        self._current_rom_bank |= lower5;
+        }else if self._mbc1 {
+            value = value & 0x1F;
+            value = if value == 0 { 1 } else {value};
+            self._current_rom_bank =(self._current_rom_bank & 0xE0) | (value & 0x1F); // turning off lower 5 bits
 
-        if self._current_rom_bank == 0 {
-            self._current_rom_bank += 1;
+            // if self._current_rom_bank == 0 {
+            //     self._current_rom_bank += 1;
+            // }
         }
     }
 
@@ -603,35 +625,23 @@ impl MemoryBus {
 
     pub fn read_byte(&mut self, address: u16) -> u8 {
         let address = address as usize;
-
         match address {
-            BIOS_BEGIN..=BIOS_END => {
-                if self._inbios {
-                    if address < 0x0100 {
-                        return self._bios[address - BIOS_BEGIN];
-                    } else if address == 0x0100 {
-                        self._inbios = false;
-                    }
-                }
-
-                return self.memory[address];
-            }
-
             ROM_0_BEGIN..=ROM_0_END => {
-                return self.memory[address - ROM_0_BEGIN];
+                return self.memory[address];
             }
 
             ROM_1_BEGIN..=ROM_1_END => {
                 return self._cartridge
-                    [address - ROM_1_BEGIN + (self._current_rom_bank as usize * 0x4000)];
+                    [address + (self._current_rom_bank - 1) as usize * 0x4000];
             }
 
             VRAM_BEGIN..=VRAM_END => {
                 return self.memory[address];
             }
 
+            //0xA000 - 0XBFFF
             EXTERNAL_RAM_BEGIN..=EXTERNAL_RAM_END => {
-                return self._ram_banks[self._current_ram_bank as usize][address - 0xA000];
+                return self._ram_banks[address + ((self._current_ram_bank as usize) *0x2000) - 0xA000];
             }
 
             WORKING_RAM_BEGIN..=WORKING_RAM_END | W_SHADOW_RAM_BEGIN..=W_SHADOW_RAM_END => {
@@ -639,7 +649,6 @@ impl MemoryBus {
             }
 
             SPRITE_RAM_BEGIN..=SPRITE_RAM_END => {
-                // HANDLE CORRECTLY.
                 return self.memory[address];
             }
 
@@ -647,119 +656,75 @@ impl MemoryBus {
                 return self.get_joypad_state();
             }
 
-            ZRAM_BEGIN..=ZRAM_END => {
-                return self.memory[address - ZRAM_BEGIN];
+            0xFFFF => {
+                return self.memory[0xFFFF];
             }
 
-            _ => self.memory[address as usize],
+            MM_IO_BEGIN..=MM_IO_END => {
+                return  self.memory[address];
+            }
+
+            ZRAM_BEGIN..=ZRAM_END => {
+                return self.memory[address];
+            }
+
+            _ => panic!("Reading UnAccesed Memory {:X}",address),
         }
     }
 
     pub fn write_bytes(&mut self, address: u16, value: u8) {
         let address = address as usize;
-
         match address {
-            BIOS_BEGIN..=BIOS_END => {
-                // NO WRITING TO BIOS
-            }
-
+            
             ROM_0_BEGIN..=ROM_1_END => {
-                // NO WRITING to ROM\
+                // NO WRITING to ROM 
                 self.handle_banking(address, value);
             }
-
+            
             VRAM_BEGIN..=VRAM_END => {
-                // self.gpu.write_vram(address - VRAM_BEGIN, value);/
-
                 self.memory[address] = value;
-                // If our index is greater than 0x1800, we're not writing to the tile set storage
-                // so we can just return.
-                if address >= 0x1800 {
-                    return;
-                }
-
-                // Tiles rows are encoded in two bytes with the first byte always
-                // on an even address. Bitwise ANDing the address with 0xffe
-                // gives us the address of the first byte.
-                // For example: `12 & 0xFFFE == 12` and `13 & 0xFFFE == 12`
-                let normalized_index = address & 0xFFFE;
-
-                // First we need to get the two bytes that encode the tile row.
-                let byte1 = self.memory[normalized_index];
-                let byte2 = self.memory[normalized_index + 1];
-
-                // A tiles is 8 rows tall. Since each row is encoded with two bytes a tile
-                // is therefore 16 bytes in total.
-                let tile_index = address / 16;
-                // Every two bytes is a new row
-                let row_index = (address % 16) / 2;
-
-                // Now we're going to loop 8 times to get the 8 pixels that make up a given row.
-                for pixel_index in 0..8 {
-                    // To determine a pixel's value we must first find the corresponding bit that encodes
-                    // that pixels value:
-                    // 1111_1111
-                    // 0123 4567
-                    //
-                    // As you can see the bit that corresponds to the nth pixel is the bit in the nth
-                    // position *from the left*. Bits are normally indexed from the right.
-                    //
-                    // To find the first pixel (a.k.a pixel 0) we find the left most bit (a.k.a bit 7). For
-                    // the second pixel (a.k.a pixel 1) we first the second most left bit (a.k.a bit 6) and
-                    // so on.
-                    //
-                    // We then create a mask with a 1 at that position and 0s everywhere else.
-                    //
-                    // Bitwise ANDing this mask with our bytes will leave that particular bit with its
-                    // original value and every other bit with a 0.
-                    let mask = 1 << (7 - pixel_index);
-                    let lsb = byte1 & mask;
-                    let msb = byte2 & mask;
-
-                    // If the masked values are not 0 the masked bit must be 1. If they are 0, the masked
-                    // bit must be 0.
-                    //
-                    // Finally we can tell which of the four tile values the pixel is. For example, if the least
-                    // significant byte's bit is 1 and the most significant byte's bit is also 1, then we
-                    // have tile value `Three`.
-                    let value = match (lsb != 0, msb != 0) {
-                        (true, true) => tile_pixel_value::TilePixelValue::Three,
-                        (false, true) => tile_pixel_value::TilePixelValue::Two,
-                        (true, false) => tile_pixel_value::TilePixelValue::One,
-                        (false, false) => tile_pixel_value::TilePixelValue::Zero,
-                    };
-
-                    self.gpu.tile_set[tile_index][row_index][pixel_index] = value;
-                }
             }
 
             EXTERNAL_RAM_BEGIN..=EXTERNAL_RAM_END => {
                 if self._enable_ram {
-                   self._ram_banks[self._current_ram_bank as usize][address - 0xA000] = value;
+                   self._ram_banks[address + (self._current_ram_bank as usize)*0x2000 - 0xA000] = value;
                 }
             }
 
-            WORKING_RAM_BEGIN..=WORKING_RAM_END | W_SHADOW_RAM_BEGIN..=W_SHADOW_RAM_END => {
+            WORKING_RAM_BEGIN..=WORKING_RAM_END => {
                 self.memory[address] = value;
-                self.memory[address - 0x2000] = value;
+            }
+
+            W_SHADOW_RAM_BEGIN..=W_SHADOW_RAM_END => {
+                self.memory[address] = value;
+                self.memory[address - 0x2000];
             }
 
             SPRITE_RAM_BEGIN..=SPRITE_RAM_END => {
                 self.memory[address] = value;
             }
 
+            //Divider Register
             0xFF04 => {
                 self.memory[address] = 0;
             }
 
             0xFF07 => {
                 let current_freq = self.get_clock_freq();
-                self.memory[address] = value;
+                self.memory[address] = 0xF8|value;
                 let new_freq = self.get_clock_freq();
 
                 if current_freq != new_freq {
                     self.set_clock_freq();
                 }
+            }
+
+            0xFF40 => {
+                self.memory[address] = value;
+            }
+
+            0xFF41 => {
+                self.memory[address] = value;
             }
 
             0xFF44 => {
@@ -770,19 +735,33 @@ impl MemoryBus {
                 self.do_dma_transfer(value);
             }
 
+            0xFF50 => {
+                println!("Removing bios");
+                for i in 0..256 {
+                    self.memory[i] = self._first_rom[i];
+                }
+            }
+            0xFFFF => {
+                self.memory[0xFFFF] = value;
+            }
+
+            MM_IO_BEGIN..=MM_IO_END => {
+                self.memory[address] = value;
+            }
+
             ZRAM_BEGIN..=ZRAM_END => {
-                self.memory[address - ZRAM_BEGIN] = value;
+                self.memory[address] = value;
             }
 
             _ => {
-                // unhandled call
-                println!("UNHANDLED MEM_WRITE CALL");
+                self.memory[address] = value;
             }
         }
     }
 
 
     pub fn do_dma_transfer(&mut self, value: u8) {
+        // multipling with 100H
         let address = (value as u16) << 8;
 
         for i in 0..0xA0 {
@@ -794,10 +773,10 @@ impl MemoryBus {
     pub fn set_clock_freq(&mut self) {
         let freq = self.get_clock_freq();
         match freq {
-            1 => self.mem_timer_counter = 1024, // freq 4096
-            2 => self.mem_timer_counter = 16,   // freq 262144
-            3 => self.mem_timer_counter = 64,   // freq 65536
-            4 => self.mem_timer_counter = 256,  // freq 16382
+            0 => self.mem_timer_counter = 1024, // freq 4096
+            1 => self.mem_timer_counter = 16,   // freq 262144
+            2 => self.mem_timer_counter = 64,   // freq 65536
+            3 => self.mem_timer_counter = 256,  // freq 16382
             _ => panic!("Unhandled set_freq arm"),
         }
     }
@@ -856,7 +835,7 @@ impl MemoryBus {
     }
 
     pub fn clock_enabled(&mut self) -> bool {
-        if ((self.read_byte(0xff07) >> 2) & 1) == 1 {
+        if test_bit(self.read_byte(0xff07) , 2) {
             true
         } else {
             false
@@ -867,7 +846,7 @@ impl MemoryBus {
         let (new, overflowed) = self.divider_register.overflowing_add(cycles as u8);
 
         if overflowed {
-            self.divider_register = 0;
+            self.divider_register = new;
             self.memory[0xff04] = self.memory[0xff04].wrapping_add(1) ;
         } else {
             self.divider_register = new;

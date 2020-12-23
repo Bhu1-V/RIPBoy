@@ -1012,6 +1012,7 @@ impl Instruction {
             0x19 => Some(Instruction::ADD(ArthemeticTarget::HLDE)),
             0x29 => Some(Instruction::ADD(ArthemeticTarget::HLHL)),
             0x39 => Some(Instruction::ADD(ArthemeticTarget::HLSP)),
+            
             0xE8 => Some(Instruction::ADD(ArthemeticTarget::SP)),
 
             // 7 * 9 = 63

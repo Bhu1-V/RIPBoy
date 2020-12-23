@@ -21,6 +21,7 @@ impl std::convert::From<FlagsRegister> for u8 {
 }
 
 impl FlagsRegister {
+    /// Converts Flag register to u8
     pub fn con(&self) -> u8 {
         (if self.zero { 1 } else { 0 }) << ZERO_FLAG_BIT_POSITION
             | (if self.subtract { 1 } else { 0 }) << SUBTRACT_FLAG_BIT_POSITION
@@ -45,6 +46,8 @@ impl FlagsRegister {
 
     pub fn set_carry_true(&mut self) {
         self.carry = true;
+        self.subtract = false;
+        self.half_carry = false;
     }
 
     pub fn set_carry(&mut self, b: bool) {

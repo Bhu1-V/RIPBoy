@@ -56,7 +56,7 @@ pub const MM_IO_SIZE: usize = MM_IO_END - MM_IO_BEGIN + 1;
 
 // ZERO - PAGE RAM
 
-pub const ZRAM_BEGIN: usize = 0xFE80;
+pub const ZRAM_BEGIN: usize = 0xFF80;
 pub const ZRAM_END: usize = 0xFFFE;
 pub const ZRAM_SIZE: usize = ZRAM_END - ZRAM_BEGIN + 1;
 

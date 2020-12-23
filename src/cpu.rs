@@ -24,10 +24,11 @@ pub struct CPU {
     pub bus: MemoryBus,
     pub pc: u16,
     pub sp: u16,
-    is_halted: bool,
+    pub is_halted: bool,
     pub m: u8, // Internal Clock of Last Instruction
     pending_inrerupt_disabled : bool,
     pending_interupt_enabled : bool,
+    once : bool,
 }
 
 impl CPU {
@@ -44,6 +45,7 @@ impl CPU {
             m : 0,
             pending_inrerupt_disabled : false,
             pending_interupt_enabled : false,
+            once : false,
         }
 
     }
@@ -64,9 +66,6 @@ impl CPU {
     }
 
     fn _execute(&mut self, instruction: Instruction) -> u16 {
-        if self.is_halted {
-            return self.pc;
-        }
         let mut value;
         match instruction {
             Instruction::ADD(target) => {
@@ -331,16 +330,17 @@ impl CPU {
                     }
                     ArthemeticTarget::D8 => {
                         // TO-DO : Implement correctly
+                        // print!("\n\n pc before reading next byte pc = {:X}\n",self.pc);
                         self.m += 4;
-
                         value = self._read_next_byte();
+                        // print!("\n pc after reading next byte pc = {:X} \n",self.pc);
+
                     }
                     _ => panic!("Reached Unreachable code at AND Inst." ),
                 }
-                let new_value = self._and(value);
-                self.registers.a = new_value;
-                self.m += 1;
-
+                self.registers.a = self._and(value);
+                self.m += 4;
+                // print!("\n pc after and OP pc = {:X} \n",self.pc);
                 return self.pc.wrapping_add(1);
             }
 
@@ -607,8 +607,8 @@ impl CPU {
                         LoadByteSource::OByte => {
                             self.m += 8;
                             let u: u16 = 0xFF00;
-                            let b = self._read_next_byte() as u16;
-                            let r = self.bus.read_byte(u.overflowing_add(b).0);
+                            let b = self._read_next_byte();
+                            let r = self.bus.read_byte(u.wrapping_add(b as u16));
                             r
                         }
                         
@@ -667,7 +667,7 @@ impl CPU {
                         }
                         // todo : test this
                         LoadByteTarget::OWord => {
-                            self.m += 16;
+                            self.m += 20;
                             let w = self._read_next_word();
                             self.bus.write_bytes(w, source_value)
                         }
@@ -683,40 +683,19 @@ impl CPU {
                         LoadWordSource::D16 => self._read_next_word(),
                         LoadWordSource::SP => {
                             self.m += 8;
-                            self._read_next_word()
+                            self.sp
                         }
                         // DoubtFull 
                         LoadWordSource::SPr8 => {
                             let b:i8 = self._read_next_byte() as i8;
-                            if b < 0 {
-                                let res  = self.sp.wrapping_sub(b.abs() as u16 );
-                                
-                                self.registers.f.subtract = false;
-                                self.registers.f.zero = false;
-                                self.registers.f.half_carry = if ((b as u8)&0xf).wrapping_sub((self.sp & 0xf) as u8) & 0x10 == 0x10 {true} else {false};
-
-                                if (self.sp as u8).overflowing_add(b as u8).1 {
-                                    self.registers.f.carry = true;
-                                }else {
-                                    self.registers.f.carry = false;
-                                }
-
-                                res
-
+                            self.registers.f.half_carry = (self.sp & 0xF).wrapping_add((b as u16) & 0xF ) & 0x10 != 0;
+                            self.registers.f.carry = ((self.sp & 0xFF).wrapping_add((b as u16) & 0xFF)) & 0x100 != 0;
+                            self.registers.f.subtract = false;
+                            self.registers.f.zero = false;
+                            if b >= 0 {
+                                self.sp.wrapping_add(b as u16)
                             }else {
-                                let res = self.sp.wrapping_add(b.abs() as u16 );
-                                
-                                self.registers.f.subtract = false;
-                                self.registers.f.zero = false;
-                                self.registers.f.half_carry = if ((b as u8)&0xf).wrapping_add((self.sp & 0xf) as u8) & 0x10 == 0x10 {true} else {false};
-                                
-                                if (self.sp as u8).overflowing_add(b as u8).1 {
-                                    self.registers.f.carry = true;
-                                }else {
-                                    self.registers.f.carry = false;
-                                }
-
-                                res
+                                self.sp.wrapping_sub((b as i16).abs() as u16)
                             }
                         }
                         LoadWordSource::HL => {
@@ -730,10 +709,15 @@ impl CPU {
                         LoadWordTarget::BC => self.registers.set_bc(source_value),
                         LoadWordTarget::DE => self.registers.set_de(source_value),
                         LoadWordTarget::HL => self.registers.set_hl(source_value),
-                        LoadWordTarget::SP => self.sp = source_value,
+                        LoadWordTarget::SP => {
+                            self.sp = source_value;
+                        }
                         LoadWordTarget::A16 => {
-                            self.bus.write_bytes(source_value, (self.sp & 0xFF) as u8);
-                        } // _ => panic!("add more"),
+                            let add = self._read_next_word();
+                            self.bus.write_bytes(add, (source_value & 0xFF) as u8);
+                            self.bus.write_bytes(add + 1, (source_value >> 8) as u8);
+
+                        }
                     }
                     self.m = self.m.wrapping_add(12);
                     self.pc.wrapping_add(1)
@@ -755,11 +739,8 @@ impl CPU {
             }
 
             Instruction::RST(target) => {
-                self._rsv();
-                self.m = 3;
-                self.sp = self.sp.wrapping_sub(2);
-                self.bus.write_bytes(self.sp, (self.pc & 0xFF) as u8);
-                self.bus.write_bytes(self.sp + 1, (self.pc >> 8) as u8);
+                self.m += 16;
+                self._push(self.pc.wrapping_add(1));
                 match target {
                     RSTTarget::H00 => 0x00 as u16,
                     RSTTarget::H08 => 0x08 as u16,
@@ -779,6 +760,7 @@ impl CPU {
                     StackTarget::HL => self.registers.get_hl(),
                     StackTarget::AF => self.registers.get_af(),
                 };
+                self.m += 16;
                 self._push(value);
                 self.pc.wrapping_add(1)
             }
@@ -791,6 +773,7 @@ impl CPU {
                     StackTarget::HL => self.registers.set_hl(result),
                     StackTarget::AF => self.registers.set_af(result),
                 }
+                self.m += 12;
                 self.pc.wrapping_add(1)
             }
 
@@ -814,7 +797,7 @@ impl CPU {
                     JumpTest::Carry => self.registers.f.carry,
                     JumpTest::Always => true,
                     JumpTest::I => {
-                        self._reset_registers();
+                        self.bus.interupt_master = true;
                         true
                     }
                     _ => panic!("TODO: support more conditions"),
@@ -829,69 +812,86 @@ impl CPU {
             Instruction::HALT => {
                 self.m += 4;
                 self.is_halted = true;
-                self.pc
+                self.pc.wrapping_add(1)
             }
 
             Instruction::CCF => {
-                self.registers.f.toggle_carry();
+                self.registers.f.carry = !self.registers.f.carry;
+                self.registers.f.subtract = false;
+                self.registers.f.half_carry = false;
                 self.m += 4;
                 self.pc.wrapping_add(1)
             }
             Instruction::SCF => {
-                self.registers.f.set_carry_true();
+                self.registers.f.carry = true;
+                self.registers.f.subtract = false;
+                self.registers.f.half_carry = false;
                 self.m += 4;
                 self.pc.wrapping_add(1)
             }
             Instruction::RRA => {
-                let b = self.registers.f.get_carry();
-                if (self.registers.a & 1) == 1 {
-                    self.registers.f.set_carry(true);
-                } else {
-                    self.registers.f.set_carry(false);
-                }
-                self.registers.a >>= 1;
-                if b {
-                    self.registers.a |= 0x80;
-                };
+                let mut reg = self.registers.a;
+                let bit0 = reg & 1;
+                let cy = if self.registers.f.carry {1} else {0};
+                reg >>= 1;
+                reg += cy << 7;
+                
+                self.registers.f.carry = if bit0 == 1 {true} else {false};
+                self.registers.f.half_carry = false;
+                self.registers.f.subtract = false;
+                self.registers.f.zero = false;
+
+                self.registers.a = reg;
+                self.m += 4;
                 self.pc.wrapping_add(1)
             }
 
             Instruction::RRCA => {
-                if (self.registers.a & 1) == 1 {
-                    self.registers.f.set_carry(true);
-                    self.registers.a >>= 1;
-                    self.registers.a |= 0x80;
-                } else {
-                    self.registers.f.set_carry(false);
-                    self.registers.a >>= 1;
-                }
+                let mut reg = self.registers.a;
+                let bit0 = reg & 1;
+                reg >>= 1;
+                reg += bit0 << 7;
+
+                self.registers.f.carry = if bit0 == 1 {true} else {false};
+                
+                self.registers.f.zero = false;
+                self.registers.f.subtract = false;
+                self.registers.f.half_carry = false;
+
+                self.registers.a = reg;
+
+                self.m += 4;
                 self.pc.wrapping_add(1)
             }
 
             Instruction::RLA => {
-                let b = self.registers.f.get_carry();
-                if (self.registers.a >> 7) == 1 {
-                    self.registers.f.set_carry(true);
-                } else {
-                    self.registers.f.set_carry(false);
-                }
-                self.registers.a <<= 1;
-                if b {
-                    self.registers.a |= 1
-                };
+                let mut reg = self.registers.a;
+                let bit7 = reg >> 7;
+                let cy = if self.registers.f.carry {1} else {0};
+                reg <<= 1;
+                reg += cy;
+                
+                self.registers.f.carry = if bit7 == 1 {true} else {false};
+                self.registers.f.half_carry = false;
+                self.registers.f.subtract = false;
+                self.registers.f.zero = false;
+
+                self.registers.a = reg;
+
+                self.m += 4;
                 self.pc.wrapping_add(1)
             }
 
             Instruction::RLCA => {
-                // let b = self.registers.f.get_carry();
-                if (self.registers.a >> 7) == 1 {
-                    self.registers.f.set_carry(true);
-                    self.registers.a <<= 1;
-                    self.registers.a |= 1;
-                } else {
-                    self.registers.f.set_carry(false);
-                    self.registers.a <<= 1;
-                }
+                let bit7 = self.registers.a >> 7;
+                self.registers.a = (self.registers.a << 1).wrapping_add(bit7);
+                self.registers.f.carry = if bit7 != 0 {true} else {false};
+
+                self.registers.f.half_carry = false;
+                self.registers.f.subtract = false;
+                self.registers.f.zero = false;
+
+                self.m += 4;
                 self.pc.wrapping_add(1)
             }
 
@@ -932,21 +932,24 @@ impl CPU {
             }
 
             Instruction::STOP => {
+                println!("Executing Stop Inst.");
                 self.m += 4;
                 self._stop();
                 self.pc.wrapping_add(1)
             }
 
             Instruction::DI => {
+                // println!("called DI at pc = {}",self.pc);
                 self.m += 4;
+                // self.bus.interupt_master = false;
                 self.pending_inrerupt_disabled = true;
                 self.pc.wrapping_add(1)
             }
 
             Instruction::EI => {
-                // self.pending_interupt_enabled = true;
-                println!("Called EI at {}",self.pc);
-                self.bus.interupt_master = true;
+                // println!("called EI at pc = {}",self.pc);
+                self.pending_interupt_enabled = true;
+                // self.bus.interupt_master = true;
                 self.m += 4;
                 self.pc.wrapping_add(1)
             }
@@ -954,94 +957,105 @@ impl CPU {
             Instruction::RLC(target) => {
                 match target {
                     PrefixTarget::B => {
-                        self.registers.b = self.registers.b.rotate_left(1);
-                        if self.registers.b == 0 {
-                            self.registers.f.reset()
-                        }
-                        if (self.registers.b & 0x80) == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
+                        let mut reg = self.registers.b;
+                        let bit7 = reg >> 7;
+                        reg <<= 1;
+                        reg = reg.wrapping_add(bit7);
+                        
+                        self.registers.f.carry = if bit7 != 0 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.b = reg;
                     }
                     PrefixTarget::C => {
-                        self.registers.c = self.registers.c.rotate_left(1);
-                        if self.registers.c == 0 {
-                            self.registers.f.reset()
-                        }
-                        if (self.registers.c & 0x80) == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
+                        let mut reg = self.registers.c;
+                        let bit7 = reg >> 7;
+                        reg <<= 1;
+                        reg = reg.wrapping_add(bit7);
+                        
+                        self.registers.f.carry = if bit7 != 0 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.c = reg;
                     }
                     PrefixTarget::D => {
-                        self.registers.d = self.registers.d.rotate_left(1);
-                        if self.registers.d == 0 {
-                            self.registers.f.reset()
-                        }
-                        if (self.registers.d & 0x80) == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
+                        let mut reg = self.registers.d;
+                        let bit7 = reg >> 7;
+                        reg <<= 1;
+                        reg = reg.wrapping_add(bit7);
+                        
+                        self.registers.f.carry = if bit7 != 0 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.d = reg;
                     }
                     PrefixTarget::E => {
-                        self.registers.e = self.registers.e.rotate_left(1);
-                        if self.registers.e == 0 {
-                            self.registers.f.reset()
-                        }
-                        if (self.registers.e & 0x80) == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
+                        let mut reg = self.registers.e;
+                        let bit7 = reg >> 7;
+                        reg <<= 1;
+                        reg = reg.wrapping_add(bit7);
+                        
+                        self.registers.f.carry = if bit7 != 0 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.e = reg;
                     }
                     PrefixTarget::H => {
-                        self.registers.h = self.registers.h.rotate_left(1);
-                        if self.registers.h == 0 {
-                            self.registers.f.reset()
-                        }
-                        if (self.registers.h & 0x80) == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
+                        let mut reg = self.registers.h;
+                        let bit7 = reg >> 7;
+                        reg <<= 1;
+                        reg = reg.wrapping_add(bit7);
+                        
+                        self.registers.f.carry = if bit7 != 0 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.h = reg;
                     }
                     PrefixTarget::L => {
-                        self.registers.l = self.registers.l.rotate_left(1);
-                        if self.registers.l == 0 {
-                            self.registers.f.reset()
-                        }
-                        if (self.registers.l & 0x80) == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
+                        let mut reg = self.registers.l;
+                        let bit7 = reg >> 7;
+                        reg <<= 1;
+                        reg = reg.wrapping_add(bit7);
+                        
+                        self.registers.f.carry = if bit7 != 0 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.l = reg;
                     }
                     PrefixTarget::A => {
-                        self.registers.a = self.registers.a.rotate_left(1);
-                        if self.registers.a == 0 {
-                            self.registers.f.reset()
-                        }
-                        if (self.registers.a & 0x80) == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
+                        let mut reg = self.registers.a;
+                        let bit7 = reg >> 7;
+                        reg <<= 1;
+                        reg = reg.wrapping_add(bit7);
+                        
+                        self.registers.f.carry = if bit7 != 0 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.a = reg;
                     }
                     PrefixTarget::HLV => {
-                        let mut value = self.bus.read_byte(self.registers.get_hl());
-                        value = value.rotate_left(1);
-                        self.bus.write_bytes(self.registers.get_hl(), value);
-                        if value == 0 {
-                            self.registers.f.reset()
-                        }
-                        if (value & 0x80) == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
+                        let mut hlv = self.bus.read_byte(self.registers.get_hl());
+                        let bit7 = hlv >> 7;
+                        hlv = (hlv << 1).wrapping_add(bit7);
+                        self.registers.f.carry = if bit7 != 0 {true} else {false};
+                        self.registers.f.zero = hlv == 0;
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.bus.write_bytes(self.registers.get_hl(), hlv);
                         self.m += 8;
                     }
                 }
@@ -1052,108 +1066,122 @@ impl CPU {
             Instruction::RL(target) => {
                 match target {
                     PrefixTarget::B => {
-                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
-                        if self.registers.b >> 7 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        self.registers.b = (self.registers.b << 1) + x;
-                        if self.registers.b == 0 {
-                            self.registers.f.zero = true;
-                        }
+                        let mut reg = self.registers.b;
+                        let bit7 = reg >> 7;
+                        let cy = if self.registers.f.carry {1} else {0};
+                        reg <<= 1;
+                        reg += cy;
+                        
+                        self.registers.f.carry = if bit7 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.b = reg;
                     }
                     PrefixTarget::C => {
-                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
-                        if self.registers.c >> 7 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        self.registers.c = (self.registers.c << 1) + x;
-                        if self.registers.c == 0 {
-                            self.registers.f.zero = true;
-                        }
+                        let mut reg = self.registers.c;
+                        let bit7 = reg >> 7;
+                        let cy = if self.registers.f.carry {1} else {0};
+                        reg <<= 1;
+                        reg += cy;
+                        
+                        self.registers.f.carry = if bit7 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.c = reg;
                     }
                     PrefixTarget::D => {
-                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
-                        if self.registers.d >> 7 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        self.registers.d = (self.registers.d << 1) + x;
-                        if self.registers.d == 0 {
-                            self.registers.f.zero = true;
-                        }
+                        let mut reg = self.registers.d;
+                        let bit7 = reg >> 7;
+                        let cy = if self.registers.f.carry {1} else {0};
+                        reg <<= 1;
+                        reg += cy;
+                        
+                        self.registers.f.carry = if bit7 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.d = reg;
                     }
 
                     PrefixTarget::E => {
-                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
-                        if self.registers.e >> 7 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        self.registers.e = (self.registers.e << 1) + x;
-                        if self.registers.e == 0 {
-                            self.registers.f.zero = true;
-                        }
+                        let mut reg = self.registers.e;
+                        let bit7 = reg >> 7;
+                        let cy = if self.registers.f.carry {1} else {0};
+                        reg <<= 1;
+                        reg += cy;
+                        
+                        self.registers.f.carry = if bit7 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.e = reg;
                     }
 
                     PrefixTarget::H => {
-                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
-                        if self.registers.h >> 7 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        self.registers.h = (self.registers.h << 1) + x;
-                        if self.registers.h == 0 {
-                            self.registers.f.zero = true;
-                        }
+                        let mut reg = self.registers.h;
+                        let bit7 = reg >> 7;
+                        let cy = if self.registers.f.carry {1} else {0};
+                        reg <<= 1;
+                        reg += cy;
+                        
+                        self.registers.f.carry = if bit7 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.h = reg;
                     }
 
                     PrefixTarget::L => {
-                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
-                        if self.registers.l >> 7 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        self.registers.l = (self.registers.l << 1) + x;
-                        if self.registers.l == 0 {
-                            self.registers.f.zero = true;
-                        }
+                        let mut reg = self.registers.l;
+                        let bit7 = reg >> 7;
+                        let cy = if self.registers.f.carry {1} else {0};
+                        reg <<= 1;
+                        reg += cy;
+                        
+                        self.registers.f.carry = if bit7 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.l = reg;
                     }
 
                     PrefixTarget::A => {
-                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
-                        if self.registers.a >> 7 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        self.registers.a = (self.registers.a << 1) + x;
-                        if self.registers.a == 0 {
-                            self.registers.f.zero = true;
-                        }
+                        let mut reg = self.registers.a;
+                        let bit7 = reg >> 7;
+                        let cy = if self.registers.f.carry {1} else {0};
+                        reg <<= 1;
+                        reg += cy;
+                        
+                        self.registers.f.carry = if bit7 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.a = reg;
                     }
 
                     PrefixTarget::HLV => {
-                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
-                        let mut value = self.bus.read_byte(self.registers.get_hl());
-                        if value >> 7 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        value = (value << 1) + x;
-                        self.bus.write_bytes(self.registers.get_hl(), value);
-                        if value == 0 {
-                            self.registers.f.zero = true;
-                        }
+                        let mut reg = self.bus.read_byte(self.registers.get_hl());
+                        let bit7 = reg >> 7;
+                        let cy = if self.registers.f.carry {1} else {0};
+                        reg <<= 1;
+                        reg += cy;
+                        
+                        self.registers.f.carry = if bit7 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
                         self.m += 8;
+
+                        self.bus.write_bytes(self.registers.get_hl(), reg);
                     }
                 }
                 self.m += 8;
@@ -1163,95 +1191,118 @@ impl CPU {
             Instruction::RRC(target) => {
                 match target {
                     PrefixTarget::B => {
-                        self.registers.b = self.registers.b.rotate_right(1);
-                        if self.registers.b == 0 {
-                            self.registers.f.reset()
-                        }
-                        if (self.registers.b & 0x1) == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
+                        let mut reg = self.registers.b;
+                        let bit0 = reg & 1;
+                        reg >>= 1;
+                        reg += bit0 << 7;
+
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        
+                        self.registers.f.zero = reg == 0;
+                        self.registers.f.subtract = false;
+                        self.registers.f.half_carry = false;
+
+                        self.registers.b = reg;
                     }
                     PrefixTarget::C => {
-                        self.registers.c = self.registers.c.rotate_right(1);
-                        if self.registers.c == 0 {
-                            self.registers.f.reset()
-                        }
-                        if (self.registers.c & 0x1) == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
+                        let mut reg = self.registers.c;
+                        let bit0 = reg & 1;
+                        reg >>= 1;
+                        reg += bit0 << 7;
+
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        
+                        self.registers.f.zero = reg == 0;
+                        self.registers.f.subtract = false;
+                        self.registers.f.half_carry = false;
+
+                        self.registers.c = reg;
                     }
                     PrefixTarget::D => {
-                        self.registers.d = self.registers.d.rotate_right(1);
-                        if self.registers.d == 0 {
-                            self.registers.f.reset()
-                        }
-                        if (self.registers.d & 0x1) == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
+                        let mut reg = self.registers.d;
+                        let bit0 = reg & 1;
+                        reg >>= 1;
+                        reg += bit0 << 7;
+
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        
+                        self.registers.f.zero = reg == 0;
+                        self.registers.f.subtract = false;
+                        self.registers.f.half_carry = false;
+
+                        self.registers.d = reg;
                     }
                     PrefixTarget::E => {
-                        self.registers.e = self.registers.e.rotate_right(1);
-                        if self.registers.e == 0 {
-                            self.registers.f.reset()
-                        }
-                        if (self.registers.e & 0x1) == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
+                        let mut reg = self.registers.e;
+                        let bit0 = reg & 1;
+                        reg >>= 1;
+                        reg += bit0 << 7;
+
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        
+                        self.registers.f.zero = reg == 0;
+                        self.registers.f.subtract = false;
+                        self.registers.f.half_carry = false;
+
+                        self.registers.e = reg;
                     }
                     PrefixTarget::H => {
-                        self.registers.h = self.registers.h.rotate_right(1);
-                        if self.registers.h == 0 {
-                            self.registers.f.reset()
-                        }
-                        if (self.registers.h & 0x1) == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
+                        let mut reg = self.registers.h;
+                        let bit0 = reg & 1;
+                        reg >>= 1;
+                        reg += bit0 << 7;
+
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        
+                        self.registers.f.zero = reg == 0;
+                        self.registers.f.subtract = false;
+                        self.registers.f.half_carry = false;
+
+                        self.registers.h = reg;
                     }
                     PrefixTarget::L => {
-                        self.registers.l = self.registers.l.rotate_right(1);
-                        if self.registers.l == 0 {
-                            self.registers.f.reset()
-                        }
-                        if (self.registers.l & 0x1) == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
+                        let mut reg = self.registers.l;
+                        let bit0 = reg & 1;
+                        reg >>= 1;
+                        reg += bit0 << 7;
+
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        
+                        self.registers.f.zero = reg == 0;
+                        self.registers.f.subtract = false;
+                        self.registers.f.half_carry = false;
+
+                        self.registers.l = reg;
                     }
                     PrefixTarget::A => {
-                        self.registers.a = self.registers.a.rotate_right(1);
-                        if self.registers.a == 0 {
-                            self.registers.f.reset()
-                        }
-                        if (self.registers.a & 0x1) == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
+                        let mut reg = self.registers.a;
+                        let bit0 = reg & 1;
+                        reg >>= 1;
+                        reg += bit0 << 7;
+
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        
+                        self.registers.f.zero = reg == 0;
+                        self.registers.f.subtract = false;
+                        self.registers.f.half_carry = false;
+
+                        self.registers.a = reg;
                     }
                     PrefixTarget::HLV => {
-                        let mut value = self.bus.read_byte(self.registers.get_hl());
-                        value = value.rotate_right(1);
-                        self.bus.write_bytes(self.registers.get_hl(), value);
-                        if value == 0 {
-                            self.registers.f.reset()
-                        }
-                        if (value & 0x1) == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
+                        let mut reg = self.bus.read_byte(self.registers.get_hl());
+                        let bit0 = reg & 1;
+                        reg >>= 1;
+                        reg += bit0 << 7;
+
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        
+                        self.registers.f.zero = reg == 0;
+                        self.registers.f.subtract = false;
+                        self.registers.f.half_carry = false;
+
                         self.m += 8;
+
+                        self.bus.write_bytes(self.registers.get_hl(), reg);
                     }
                 }
                 self.m += 8;
@@ -1261,107 +1312,121 @@ impl CPU {
             Instruction::RR(target) => {
                 match target {
                     PrefixTarget::B => {
-                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
-                        if self.registers.b & 0x1 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        self.registers.b = (self.registers.b >> 1) + x;
-                        if self.registers.b == 0 {
-                            self.registers.f.zero = true;
-                        }
+                        let mut reg = self.registers.b;
+                        let bit0 =reg & 1;
+                        let cy = if self.registers.f.carry {1} else {0};
+                        reg >>= 1;
+                        reg += cy << 7;
+                        
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.b = reg;
                     }
                     PrefixTarget::C => {
-                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
-                        if self.registers.c & 0x1 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        self.registers.c = (self.registers.c >> 1) + x;
-                        if self.registers.c == 0 {
-                            self.registers.f.zero = true;
-                        }
+                        let mut reg = self.registers.c;
+                        let bit0 =reg & 1;
+                        let cy = if self.registers.f.carry {1} else {0};
+                        reg >>= 1;
+                        reg += cy << 7;
+                        
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.c = reg;
                     }
                     PrefixTarget::D => {
-                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
-                        if self.registers.d & 0x1 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        self.registers.d = (self.registers.d >> 1) + x;
-                        if self.registers.d == 0 {
-                            self.registers.f.zero = true;
-                        }
+                        let mut reg = self.registers.d;
+                        let bit0 =reg & 1;
+                        let cy = if self.registers.f.carry {1} else {0};
+                        reg >>= 1;
+                        reg += cy << 7;
+                        
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.d = reg;
                     }
 
                     PrefixTarget::E => {
-                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
-                        if self.registers.e & 0x1 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        self.registers.e = (self.registers.e >> 1) + x;
-                        if self.registers.e == 0 {
-                            self.registers.f.zero = true;
-                        }
+                        let mut reg = self.registers.e;
+                        let bit0 =reg & 1;
+                        let cy = if self.registers.f.carry {1} else {0};
+                        reg >>= 1;
+                        reg += cy << 7;
+                        
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.e = reg;
                     }
 
                     PrefixTarget::H => {
-                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
-                        if self.registers.h & 0x1 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        self.registers.h = (self.registers.h >> 1) + x;
-                        if self.registers.h == 0 {
-                            self.registers.f.zero = true;
-                        }
+                        let mut reg = self.registers.h;
+                        let bit0 =reg & 1;
+                        let cy = if self.registers.f.carry {1} else {0};
+                        reg >>= 1;
+                        reg += cy << 7;
+                        
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.h = reg;
                     }
 
                     PrefixTarget::L => {
-                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
-                        if self.registers.l & 0x1 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        self.registers.l = (self.registers.l >> 1) + x;
-                        if self.registers.l == 0 {
-                            self.registers.f.zero = true;
-                        }
+                        let mut reg = self.registers.l;
+                        let bit0 =reg & 1;
+                        let cy = if self.registers.f.carry {1} else {0};
+                        reg >>= 1;
+                        reg += cy << 7;
+                        
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.l = reg;
                     }
 
                     PrefixTarget::A => {
-                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
-                        if self.registers.a & 0x1 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        self.registers.a = (self.registers.a >> 1) + x;
-                        if self.registers.a == 0 {
-                            self.registers.f.zero = true;
-                        }
+                        let mut reg = self.registers.a;
+                        let bit0 =reg & 1;
+                        let cy = if self.registers.f.carry {1} else {0};
+                        reg >>= 1;
+                        reg += cy << 7;
+                        
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.a = reg;
                     }
 
                     PrefixTarget::HLV => {
-                        let x = if self.registers.f.get_carry() { 1u8 } else { 0 };
-                        let mut value = self.bus.read_byte(self.registers.get_hl());
-                        if value & 0x1 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        value = (value >> 1) + x;
-                        self.bus.write_bytes(self.registers.get_hl(), value);
-                        if value == 0 {
-                            self.registers.f.zero = true;
-                        }
+                        let mut reg = self.bus.read_byte(self.registers.get_hl());
+                        let bit0 =reg & 1;
+                        let cy = if self.registers.f.carry {1} else {0};
+                        reg >>= 1;
+                        reg += cy << 7;
+                        
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.bus.write_bytes(self.registers.get_hl(), reg);
                         self.m += 8;
                     }
                 }
@@ -1372,78 +1437,100 @@ impl CPU {
             Instruction::SLA(target) => {
                 match target {
                     PrefixTarget::B => {
-                        if self.registers.b >> 7 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        self.registers.b = self.registers.b << 1;
-                        self.registers.f.zero = if self.registers.b == 0 { true } else { false };
+                        let mut reg = self.registers.b;
+                        let bit7 = reg >> 7;
+                        reg <<= 1;
+                        
+                        self.registers.f.carry = if bit7 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.b = reg;
                     }
                     PrefixTarget::C => {
-                        if self.registers.c >> 7 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        self.registers.c = self.registers.c << 1;
-                        self.registers.f.zero = if self.registers.c == 0 { true } else { false };
+                        let mut reg =self.registers.c;
+                        let bit7 = reg >> 7;
+                        reg <<= 1;
+                        
+                        self.registers.f.carry = if bit7 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                       self.registers.c = reg;
                     }
                     PrefixTarget::D => {
-                        if self.registers.d >> 7 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        self.registers.d = self.registers.d << 1;
-                        self.registers.f.zero = if self.registers.d == 0 { true } else { false };
+                        let mut reg =self.registers.d;
+                        let bit7 = reg >> 7;
+                        reg <<= 1;
+                        
+                        self.registers.f.carry = if bit7 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                       self.registers.d = reg;
                     }
                     PrefixTarget::E => {
-                        if self.registers.e >> 7 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        self.registers.e = self.registers.e << 1;
-                        self.registers.f.zero = if self.registers.e == 0 { true } else { false };
+                        let mut reg =self.registers.e;
+                        let bit7 = reg >> 7;
+                        reg <<= 1;
+                        
+                        self.registers.f.carry = if bit7 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                       self.registers.e = reg;
                     }
                     PrefixTarget::H => {
-                        if self.registers.h >> 7 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        self.registers.h = self.registers.h << 1;
-                        self.registers.f.zero = if self.registers.h == 0 { true } else { false };
+                        let mut reg =self.registers.h;
+                        let bit7 = reg >> 7;
+                        reg <<= 1;
+                        
+                        self.registers.f.carry = if bit7 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                       self.registers.h = reg;
                     }
                     PrefixTarget::L => {
-                        if self.registers.l >> 7 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        self.registers.l = self.registers.l << 1;
-                        self.registers.f.zero = if self.registers.l == 0 { true } else { false };
+                        let mut reg =self.registers.l;
+                        let bit7 = reg >> 7;
+                        reg <<= 1;
+                        
+                        self.registers.f.carry = if bit7 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                       self.registers.l = reg;
                     }
                     PrefixTarget::A => {
-                        if self.registers.a >> 7 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        self.registers.a = self.registers.a << 1;
-                        self.registers.f.zero = if self.registers.a == 0 { true } else { false };
+                        let mut reg =self.registers.a;
+                        let bit7 = reg >> 7;
+                        reg <<= 1;
+                        
+                        self.registers.f.carry = if bit7 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                       self.registers.a = reg;
                     }
                     PrefixTarget::HLV => {
-                        let mut value = self.bus.read_byte(self.registers.get_hl());
-                        if value >> 7 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        value = value << 1;
-                        self.bus.write_bytes(self.registers.get_hl(), value);
-                        self.registers.f.zero = if value == 0 { true } else { false };
+                        let mut reg = self.bus.read_byte(self.registers.get_hl());
+                        let bit7 = reg >> 7;
+                        reg <<= 1;
+                        
+                        self.registers.f.carry = if bit7 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.bus.write_bytes(self.registers.get_hl(), reg);
                         self.m += 8;
                     }
                 }
@@ -1454,78 +1541,100 @@ impl CPU {
             Instruction::SRL(target) => {
                 match target {
                     PrefixTarget::B => {
-                        if self.registers.b & 0x1 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        self.registers.b = self.registers.b >> 1;
-                        self.registers.f.zero = if self.registers.b == 0 { true } else { false };
+                        let mut reg = self.registers.b;
+                        let bit0 = reg & 1;
+                        reg >>= 1;
+                        
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.b = reg;
                     }
                     PrefixTarget::C => {
-                        if self.registers.c & 0x1 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        self.registers.c = self.registers.c >> 1;
-                        self.registers.f.zero = if self.registers.c == 0 { true } else { false };
+                        let mut reg = self.registers.c;
+                        let bit0 = reg & 1;
+                        reg >>= 1;
+                        
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.c = reg;
                     }
                     PrefixTarget::D => {
-                        if self.registers.d & 0x1 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        self.registers.d = self.registers.d >> 1;
-                        self.registers.f.zero = if self.registers.d == 0 { true } else { false };
+                        let mut reg = self.registers.d;
+                        let bit0 = reg & 1;
+                        reg >>= 1;
+                        
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.d = reg;
                     }
                     PrefixTarget::E => {
-                        if self.registers.e & 0x1 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        self.registers.e = self.registers.e >> 1;
-                        self.registers.f.zero = if self.registers.e == 0 { true } else { false };
+                        let mut reg = self.registers.e;
+                        let bit0 = reg & 1;
+                        reg >>= 1;
+                        
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.e = reg;
                     }
                     PrefixTarget::H => {
-                        if self.registers.h & 0x1 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        self.registers.h = self.registers.h >> 1;
-                        self.registers.f.zero = if self.registers.h == 0 { true } else { false };
+                        let mut reg = self.registers.h;
+                        let bit0 = reg & 1;
+                        reg >>= 1;
+                        
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.h = reg;
                     }
                     PrefixTarget::L => {
-                        if self.registers.l & 0x1 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        self.registers.l = self.registers.l >> 1;
-                        self.registers.f.zero = if self.registers.l == 0 { true } else { false };
+                        let mut reg = self.registers.l;
+                        let bit0 = reg & 1;
+                        reg >>= 1;
+                        
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.l = reg;
                     }
                     PrefixTarget::A => {
-                        if self.registers.a & 0x1 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        self.registers.a = self.registers.a >> 1;
-                        self.registers.f.zero = if self.registers.a == 0 { true } else { false };
+                        let mut reg = self.registers.a;
+                        let bit0 = reg & 1;
+                        reg >>= 1;
+                        
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.a = reg;
                     }
                     PrefixTarget::HLV => {
-                        let mut value = self.bus.read_byte(self.registers.get_hl());
-                        if value & 0x1 == 1 {
-                            self.registers.f.set_carry(true);
-                        } else {
-                            self.registers.f.set_carry(false);
-                        }
-                        value = value >> 1;
-                        self.bus.write_bytes(self.registers.get_hl(), value);
-                        self.registers.f.zero = if value == 0 { true } else { false };
+                        let mut reg = self.bus.read_byte(self.registers.get_hl());
+                        let bit0 = reg & 1;
+                        reg >>= 1;
+                        
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.bus.write_bytes(self.registers.get_hl(), reg);
                         self.m += 8;
                     }
                 }
@@ -1597,63 +1706,117 @@ impl CPU {
             Instruction::SRA(target) => {
                 match target {
                     PrefixTarget::A => {
-                        let x = self.registers.a & 0x80;
-                        let cy = self.registers.a & 0x1 == 1;
-                        self.registers.a = self.registers.a >> 1;
-                        self.registers.f.carry = cy;
-                        self.registers.a = self.registers.a | x;
+                        let mut reg = self.registers.a;
+                        let bit0 = reg & 1;
+                        let bit7 = reg >> 7;
+                        reg >>= 1;
+                        reg += bit7 << 7;
+                        
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.a = reg;
                     }
                     PrefixTarget::B => {
-                        let x = self.registers.b & 0x80;
-                        let cy = self.registers.b & 0x1 == 1;
-                        self.registers.b = self.registers.b >> 1;
-                        self.registers.f.carry = cy;
-                        self.registers.b = self.registers.b | x;
+                        let mut reg = self.registers.b;
+                        let bit0 = reg & 1;
+                        let bit7 = reg >> 7;
+                        reg >>= 1;
+                        reg += bit7 << 7;
+                        
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.b = reg;
                     }
                     PrefixTarget::C => {
-                        let x = self.registers.c & 0x80;
-                        let cy = self.registers.c & 0x1 == 1;
-                        self.registers.c = self.registers.c >> 1;
-                        self.registers.f.carry = cy;
-                        self.registers.c = self.registers.c | x;
+                        let mut reg = self.registers.c;
+                        let bit0 = reg & 1;
+                        let bit7 = reg >> 7;
+                        reg >>= 1;
+                        reg += bit7 << 7;
+                        
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.c = reg;
                     }
                     PrefixTarget::D => {
-                        let x = self.registers.d & 0x80;
-                        let cy = self.registers.d & 0x1 == 1;
-                        self.registers.d = self.registers.d >> 1;
-                        self.registers.f.carry = cy;
-                        self.registers.d = self.registers.d | x;
+                        let mut reg = self.registers.d;
+                        let bit0 = reg & 1;
+                        let bit7 = reg >> 7;
+                        reg >>= 1;
+                        reg += bit7 << 7;
+                        
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.d = reg;
                     }
                     PrefixTarget::E => {
-                        let x = self.registers.e & 0x80;
-                        let cy = self.registers.e & 0x1 == 1;
-                        self.registers.e = self.registers.e >> 1;
-                        self.registers.f.carry = cy;
-                        self.registers.e = self.registers.e | x;
+                        let mut reg = self.registers.e;
+                        let bit0 = reg & 1;
+                        let bit7 = reg >> 7;
+                        reg >>= 1;
+                        reg += bit7 << 7;
+                        
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.e = reg;
                     }
                     PrefixTarget::H => {
-                        let x = self.registers.h & 0x80;
-                        let cy = self.registers.h & 0x1 == 1;
-                        self.registers.h = self.registers.h >> 1;
-                        self.registers.f.carry = cy;
-                        self.registers.h = self.registers.h | x;
+                        let mut reg = self.registers.h;
+                        let bit0 = reg & 1;
+                        let bit7 = reg >> 7;
+                        reg >>= 1;
+                        reg += bit7 << 7;
+                        
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.h = reg;
                     }
                     PrefixTarget::L => {
-                        let x = self.registers.l & 0x80;
-                        let cy = self.registers.l & 0x1 == 1;
-                        self.registers.l = self.registers.l >> 1;
-                        self.registers.f.carry = cy;
-                        self.registers.l = self.registers.l | x;
+                        let mut reg = self.registers.l;
+                        let bit0 = reg & 1;
+                        let bit7 = reg >> 7;
+                        reg >>= 1;
+                        reg += bit7 << 7;
+                        
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
+                        self.registers.l = reg;
                     }
                     PrefixTarget::HLV => {
-                        let mut value = self.bus.read_byte(self.registers.get_hl());
-                        let x = value & 0x80;
-                        let cy = value & 0x1 == 1;
-                        value = value >> 1;
-                        self.registers.f.carry = cy;
-                        value = value | x;
-                        self.bus.write_bytes(self.registers.get_hl(), value);
+                        let mut reg = self.bus.read_byte(self.registers.get_hl());
+                        let bit0 = reg & 1;
+                        let bit7 = reg >> 7;
+                        reg >>= 1;
+                        reg += bit7 << 7;
+                        
+                        self.registers.f.carry = if bit0 == 1 {true} else {false};
+                        self.registers.f.half_carry = false;
+                        self.registers.f.subtract = false;
+                        self.registers.f.zero = reg == 0;
+
                         self.m += 8;
+                        self.bus.write_bytes(self.registers.get_hl(), reg);
                     }
                 }
                 self.m += 8;
@@ -1670,23 +1833,23 @@ impl CPU {
                     SourceRegister::H => self.registers.h,
                     SourceRegister::L => self.registers.l,
                     SourceRegister::HLV => {
-                        self.m += 8;
+                        self.m += 4;
                         self.bus.read_byte(self.registers.get_hl())
                     }
                 };
                 let mask = match target_bit {
-                    TargetBit::B0 => (!(source >> 0)) & 1,
-                    TargetBit::B1 => (!(source >> 1)) & 1,
-                    TargetBit::B2 => (!(source >> 2)) & 1,
-                    TargetBit::B3 => (!(source >> 3)) & 1,
-                    TargetBit::B4 => (!(source >> 4)) & 1,
-                    TargetBit::B5 => (!(source >> 5)) & 1,
-                    TargetBit::B6 => (!(source >> 6)) & 1,
-                    TargetBit::B7 => (!(source >> 7)) & 1,
+                    TargetBit::B0 => source & (1 << 0),
+                    TargetBit::B1 => source & (1 << 1),
+                    TargetBit::B2 => source & (1 << 2),
+                    TargetBit::B3 => source & (1 << 3),
+                    TargetBit::B4 => source & (1 << 4),
+                    TargetBit::B5 => source & (1 << 5),
+                    TargetBit::B6 => source & (1 << 6),
+                    TargetBit::B7 => source & (1 << 7),
                 };
                 self.registers.f.half_carry = true;
                 self.registers.f.subtract = false;
-                self.registers.f.zero = if mask == 1 { true } else { false };
+                self.registers.f.zero = mask == 0 ;
                 self.m += 8;
                 self.pc.wrapping_add(1)
             }
@@ -1771,31 +1934,24 @@ impl CPU {
         }
     }
     // TO- DO : if error check whether all sp adds are correctly done.
-    fn _rsv(&mut self) {
-        self._rsv.a = self.registers.a;
-        self._rsv.b = self.registers.b;
-        self._rsv.c = self.registers.c;
-        self._rsv.d = self.registers.d;
-        self._rsv.e = self.registers.e;
-        self._rsv.f = FlagsRegister::from(self.registers.f.con());
-        self._rsv.h = self.registers.h;
-        self._rsv.l = self.registers.l;
-    }
-
     fn _call(&mut self, should_jump: bool) -> u16 {
         let next_pc = self.pc.wrapping_add(3);
         if should_jump {
+            self.m += 24;
             self._push(next_pc);
             self._read_next_word()
         } else {
+            self.m += 12;
             next_pc
         }
     }
 
     fn _return_(&mut self, should_jump: bool) -> u16 {
         if should_jump {
+            self.m += 20;
             self._pop()
         } else {
+            self.m += 8;
             self.pc.wrapping_add(1)
         }
     }
@@ -1834,45 +1990,26 @@ impl CPU {
         //tprintln!("doing fetch - exectue the Opcode");
         self.m = 0;
         let mut instruction_byte = self.bus.read_byte(self.pc);
-        // if self.pc == 152 { println!("Instruction Byte = 0x{:x}",instruction_byte); }
+        
         let prefixed = instruction_byte == 0xCB;
         if prefixed {
+            self.m += 4;
             self.pc = self.pc.wrapping_add(1);
             instruction_byte = self.bus.read_byte(self.pc);
         }
+
         
         if !(self.is_halted) {
             //tprintln!("cpu check 1");
             let next_pc = if let Some(instruction) = Instruction::from_byte(instruction_byte, prefixed)
                 {
-                    // if self.pc > 0xFF { 
-                    //     // for i in 0..16 {
-                    //     //     if i == 0 {
-                    //     //         for k in 0..16 {
-                    //     //             if k == 0 {print!("     ");}
-                    //     //             print!("{:>4X} ",k);
-                    //     //         }
-                    //     //         print!("\n");
-                    //     //     }
-                    //     //     for j in 0..16 {
-                    //     //         if j == 0 { print!("{:>4X} ",i); }
-                    //     //         print!("{:>4X} ",&self.bus.memory[(16 * i)+j]);
-                    //     //     }
-                    //     //     print!("\n");
-                    //     // }
-                    //     println!("  A   B   C   D   E   F   H   L  PC         SP");
-                    //     println!("{:?} {} {:X}",self.registers,self.pc,self.sp);
-                    //     println!("Executing Instruction = {:?} of {:x}",instruction,instruction_byte);
-                    // }
                     self._execute(instruction)  
-                } else {
-                    panic!("Invaild Instruction {:x}", instruction_byte);
+                }else {
+                    self.pc
                 };
             self.pc = next_pc;
         }else {
-            //tprintln!("cpu check 2");
             self.m += 4;
-            self.pc = self._execute(Instruction::HALT);
         }
 
         if self.pending_inrerupt_disabled {
@@ -1901,17 +2038,18 @@ impl CPU {
         new_val
     }
 
-    fn _adc (&mut self , mut val : u8) -> u8 {
+    fn _adc (&mut self , val : u8) -> u8 {
         let cy = if self.registers.f.carry {1} else {0};
+        let half_cal = (self.registers.a & 0xF).wrapping_add(val & 0xF);
 
-        self.registers.f.half_carry = ((self.registers.a & 0xF).wrapping_add(val & 0xF).wrapping_add(cy)) & 0x10 == 0x10;
+        self.registers.f.half_carry = half_cal.wrapping_add(cy) & 0x10 == 0x10;
 
-        val = val.wrapping_add(cy);
-        let (new_val , overflowed ) = self.registers.a.overflowing_add(val);
+        let (n_v , first_overflow) = val.overflowing_add(cy);
+        let (new_val , overflowed ) = self.registers.a.overflowing_add(n_v);
 
         self.registers.f.zero = new_val == 0;
         self.registers.f.subtract = false;
-        self.registers.f.carry = overflowed;
+        self.registers.f.carry = overflowed | first_overflow;
 
         new_val
     }
@@ -1955,15 +2093,18 @@ impl CPU {
         new_val
     }
 
-    fn _sbc(&mut self , mut val : u8 ) -> u8 {
+    fn _sbc(&mut self , val : u8 ) -> u8 {
         let cy = if self.registers.f.carry {1} else {0};
-        
+        let half_cal = (self.registers.a & 0xF).wrapping_sub(val & 0xF);
+
+        self.registers.f.half_carry = half_cal.wrapping_sub(cy) & 0x10 == 0x10;
+
+        let (n_v , first_overflow) = val.overflowing_add(cy);
+        let (new_val , overflowed ) = self.registers.a.overflowing_sub(n_v);
+
+        self.registers.f.zero = new_val == 0;
         self.registers.f.subtract = true;
-        self.registers.f.half_carry = ((self.registers.a & 0xF).wrapping_sub(val & 0xF).wrapping_sub(cy) & 0x10) == 0x10;
-        
-        val = val.wrapping_add(cy);
-        let (new_val , overflowed) = self.registers.a.overflowing_sub(val);
-        self.registers.f.carry = overflowed;
+        self.registers.f.carry = overflowed | first_overflow;
 
         new_val
     }
@@ -1996,14 +2137,14 @@ impl CPU {
         } else {
             self.registers.a | value
         };
-        // println!("from or fun = new_val = Decimal = {} , Hex = 0x{:x}", new_val, new_val);
+
         self.registers.f = FlagsRegister {
             zero: new_val == 0,
             carry: false,
             half_carry: false,
             subtract: false,
         };
-        // println!("from or fun made flag reg = {:?}", self.registers.f);
+
         new_val
     }
 
@@ -2022,18 +2163,12 @@ impl CPU {
 
     fn _jump_8bit(&mut self, should_jump: bool) -> u16 {
         if should_jump {
-            //tprintln!("Jump Condition Was True");
             let mut b = self._read_next_byte() as i8;
             b += 1;
-            self.m = 3;
-            if self.pc == 152 {println!("adding pc = {} with no. of jumps = {} = {}",
-                self.pc,
-                b,
-                self.pc.wrapping_add(b as u16)
-            );}
+            self.m += 12;
             return self.pc.wrapping_add(b as u16);
         } else {
-            self.m = 2;
+            self.m += 8;
             return self.pc.wrapping_add(2);
         }
     }
@@ -2043,50 +2178,42 @@ impl CPU {
     }
 
     fn _jump(&mut self, should_jump: bool, exception: bool) -> u16 {
-        if should_jump & !(exception) {
+        if should_jump && !(exception) {
             self.m += 16;
-            // Gameboy is little endian so read pc + 2 as most significant bit
-            // and pc + 1 as least significant bit
+
             let least_significant_byte = self.bus.read_byte(self.pc + 1) as u16;
             let most_significant_byte = self.bus.read_byte(self.pc + 2) as u16;
             (most_significant_byte << 8) | least_significant_byte
-        } else if should_jump & exception {
+        } else if should_jump && exception {
+            self.m += 4;
             self.registers.get_hl()
         } else {
-            // If we don't jump we need to still move the program
-            // counter forward by 3 since the jump instruction is
-            // 3 bytes wide (1 byte for tag and 2 bytes for jump address)
+            self.m += 12;
+
             self.pc.wrapping_add(3)
         }
     }
 
-    fn _reset_registers(&mut self) {
-        self.registers.a = self._rsv.a;
-        self.registers.b = self._rsv.b;
-        self.registers.c = self._rsv.c;
-        self.registers.d = self._rsv.d;
-        self.registers.e = self._rsv.e;
-        self.registers.f = FlagsRegister::from(self._rsv.f.con() as u8);
-        self.registers.h = self._rsv.h;
-        self.registers.l = self._rsv.l;
-    }
 
     pub fn _request_interupt(&mut self, i: u8) {
         // todo implement Inturupt.
-        let mut req = self.bus.read_byte(0xFF0F);
+        let mut req = self.bus.memory[0xFF0F];
         req = bit_set(req, i);
-        // println!("requesting interupt {} wrote at {}",i,req);
-        self.bus.write_bytes(0xFF0F, req);
+        self.bus.memory[0xFF0F] = req;
     }
 
     pub fn get_key_pressed(&mut self, key: u8) {
         if self.bus.key_pressed(key) {
             self._request_interupt(4);
         }
+        self.update_graphics(self.m as i16);
+    }
+
+    pub fn set_key_relased(&mut self, key : u8){
+        self.bus.key_released(key);
     }
 
     pub fn update_timers(&mut self, cycles: u32) {
-        //tprintln!("updating timers.");
 
         self.bus.do_divider_register(cycles);
 
@@ -2094,29 +2221,29 @@ impl CPU {
 
             self.bus.mem_timer_counter = self.bus.mem_timer_counter.wrapping_sub(cycles as i32);
 
-            if self.bus.mem_timer_counter <= 0 {
+            if self.bus.mem_timer_counter < 0 {
+                let remaining_cycles = self.bus.mem_timer_counter;
                 self.bus.set_clock_freq();
+                self.bus.mem_timer_counter += remaining_cycles;
 
+                let tma_val = self.bus.read_byte(TIMA as u16);
+                self.bus.write_bytes(TIMA as u16, tma_val + 1);
                 // overflow
                 if self.bus.read_byte(TIMA as u16) == 255 {
                     let tma_val = self.bus.read_byte(TMA as u16);
                     self.bus.write_bytes(TIMA as u16, tma_val);
                     self._request_interupt(2);
-                } else {
-                    let tma_val = self.bus.read_byte(TIMA as u16);
-                    self.bus.write_bytes(TIMA as u16, tma_val.wrapping_add(1));
+                    self.is_halted = false;
                 }
             }
         }
     }
 
     pub fn do_interupts(&mut self) {
-        // println!("updating interupts.");
 
-        if self.bus.interupt_master == true {
+        if self.bus.interupt_master {
             let req = self.bus.read_byte(0xFF0F);
             let enabled = self.bus.read_byte(0xFFFF);
-            // println!("DEIoing Interupts req = {:X} , enable = {:X}",req,enabled);
 
             if req > 0 {
                 for i in 0..5 {
@@ -2131,6 +2258,8 @@ impl CPU {
     }
 
     pub fn _service_interupt(&mut self, i: u8) {
+        self.is_halted = false;
+
         self.bus.interupt_master = false;
         let mut req = self.bus.read_byte(0xFF0F);
         req = bit_reset(req, i);
@@ -2145,12 +2274,11 @@ impl CPU {
             4 => 0x60,
             _ => panic!("unhandled.. interupt bit"),
         };
-        println!("served Interupt by changing pc = {}",self.pc);
         self.m += 20;
     }
 
     pub fn _set_lcd_status(&mut self) {
-        let mut status = self.bus.read_byte(0xff41);
+        let mut status = self.bus.memory[0xFF41];
 
         if !self._is_lcd_enabled() {
             self.bus.scan_line_counter = 456;
@@ -2161,7 +2289,7 @@ impl CPU {
             return;
         }
 
-        let current_line = self.bus.read_byte(0xFF44);
+        let current_line = self.bus.memory[0xFF44];
         let current_mode = status & 0x3;
 
         let mut _mode = 0u8;
@@ -2197,7 +2325,18 @@ impl CPU {
         }
 
         if req_int && (_mode != current_mode) {
-            self._request_interupt(1);
+
+            if _mode == 0 {
+                self._request_interupt(1);
+            }else if _mode == 1 {
+                self._request_interupt(1);
+
+                if self.bus.memory[0xFFFF] & 1 != 0 {
+                    self._request_interupt(0);
+                }
+            }else if _mode == 2 {
+                self._request_interupt(1);
+            }
         }
 
         if self.bus.read_byte(0xFF44) == self.bus.read_byte(0xFF45) {
@@ -2218,53 +2357,45 @@ impl CPU {
     }
 
     pub fn _draw_scan_line(&mut self) {
-        // println!("check 13");
+
         let control = self.bus.read_byte(0xFF40);
 
         if test_bit(control, 0) {
-            // println!("check 14");
-            self.bus.render_tiles(control);
+
+            self.bus.render_tiles();
         }
 
         if test_bit(control, 1) {
-            println!("check 15");
+
             self.bus.render_sprites(control);
         }
     }
 
     pub fn update_graphics(&mut self, cycles: i16) -> bool {
-        //tprintln!("updating graphics.");
+
         self._set_lcd_status();
 
         if self._is_lcd_enabled() {
-            //tprintln!("check 1");
-            // println!("SLC = {} , cycles = {}",self.bus.scan_line_counter,cycles);
+
             self.bus.scan_line_counter = self.bus.scan_line_counter.wrapping_sub(cycles as i16);
-            //tprintln!("after sub SLC = {}",self.bus.scan_line_counter);
+
         } else {
-            //tprintln!("check 2");
-            return false;
+
         }
 
-        // if self.bus.memory[0xFF44] > 0x99 {
-        //     self.bus.memory[0xFF44] = 0;
-        // }
         if self.bus.scan_line_counter <= 0 {
-            //tprintln!("check 3");
+
             self.bus.memory[0xFF44] = self.bus.memory[0xFF44].wrapping_add(1);
             let current_line = self.bus.read_byte(0xFF44);
 
             self.bus.scan_line_counter = 456;
 
             if current_line == 144 {
-                // println!("check 4");
                 self._request_interupt(0);
+                return true; 
             } else if current_line > 153 {
-                // println!("check 5");
                 self.bus.memory[0xFF44] = 0;
-                return true;
             } else if current_line < 144 {
-                // println!("check 6");
                 self._draw_scan_line()
             }
         }
@@ -2272,9 +2403,7 @@ impl CPU {
     }
 
     pub fn draw_current_line(&mut self) {
-        println!("check 7");
         if test_bit(self.bus.read_byte(0xFF40) , 7) == false {
-            //tprintln!("check 8");
             return;
         }
 
@@ -2301,61 +2430,6 @@ impl CPU {
     }
 
     pub fn issue_v_blank(&mut self) {
-        //tprintln!("check 12");
         self._request_interupt(0);
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use memory_map::*;
-//     use crate::gpu::GPU;
-
-//     use super::*;
-
-//     #[test]
-//     fn add_checker() {
-//         let r: Registers = Registers {
-//             a: 0xff,
-//             b: 0x0f,
-//             c: 0x38,
-//             d: 0,
-//             e: 0,
-//             f: FlagsRegister {
-//                 zero: false,
-//                 subtract: false,
-//                 half_carry: false,
-//                 carry: true,
-//             },
-//             h: 0,
-//             l: 0x8a,
-//         };
-//         let mem = [1; 0xFFFF];
-//         let mut c: CPU = CPU {
-//             clock: Clock { m: 0},
-//             registers: r,
-//             _rsv : Registers::new(),
-//             bus: MemoryBus {
-//                 memory: mem,
-//                 gpu: GPU {
-//                     vram: [0; VRAM_SIZE],
-//                     tile_set: [crate::gpu::empty_tile(); 384],
-//                 },
-//             },
-//             sp: 0,
-//             is_halted: false,
-//             pc: 0,
-//             m: 0,
-//         };
-//         let b: u8 = c.registers.get_hl() as u8;
-//         // let a: u8 = c.registers.a;
-//         // let new_value = c.sub(b, true);
-//         // c.registers.a = new_value;
-//         println!("1st {:?}", c);
-//         let new_value = c.or(b, true);
-//         c.registers.a = new_value;
-//         println!("a = 0x{:x} , {}", new_value, new_value);
-//         println!("2nd {:?}", c);
-//         assert_eq!(1, 0);
-//     }
-// }

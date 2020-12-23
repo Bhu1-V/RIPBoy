@@ -9,3 +9,8 @@ Coding Along as I learn new stuff.
 - Download The Source Code [RUST is Required]. Put the Game u wanna play into main Directory of project with the name game.
 
 - cargo run to start emulator.
+
+
+Credits :
+
+- mixtela for his bootCode for GameBoy.

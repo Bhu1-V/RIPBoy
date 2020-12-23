@@ -1,4 +1,4 @@
-# emulator
+# RIP Boy [GameBoy Emulator In Rust].
 
 This a Basic Game-Boy Emulator. 
 

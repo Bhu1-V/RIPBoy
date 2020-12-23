@@ -63,7 +63,7 @@ impl Emulator {
     }
 
     pub fn emulate(&mut self) {
-        
+
         self.window.get_keys_pressed(KeyRepeat::Yes).map(|keys| {
             for t in keys {
                 match t {
@@ -188,12 +188,6 @@ impl Emulator {
         }
     }
 
-    // pub fn _r(&mut self){
-    //     if self.started_time.elapsed() >= Duration::from_millis(18) {
-    //         self.render();
-    //         self.started_time = Instant::now();
-    //     }
-    // }
 
     pub fn render(&mut self) {
         self.times_renderes += 1;

@@ -1012,7 +1012,7 @@ impl Instruction {
             0x19 => Some(Instruction::ADD(ArthemeticTarget::HLDE)),
             0x29 => Some(Instruction::ADD(ArthemeticTarget::HLHL)),
             0x39 => Some(Instruction::ADD(ArthemeticTarget::HLSP)),
-            
+
             0xE8 => Some(Instruction::ADD(ArthemeticTarget::SP)),
 
             // 7 * 9 = 63
@@ -1402,7 +1402,6 @@ impl Instruction {
             ))),
 
             // LD reg , n8
-
             0x06 => Some(Instruction::LD(LoadType::Byte(
                 LoadByteTarget::B,
                 LoadByteSource::D8,
@@ -1419,7 +1418,7 @@ impl Instruction {
                 LoadByteTarget::HL,
                 LoadByteSource::D8,
             ))),
-            
+
             0x0E => Some(Instruction::LD(LoadType::Byte(
                 LoadByteTarget::C,
                 LoadByteSource::D8,
@@ -1436,7 +1435,7 @@ impl Instruction {
                 LoadByteTarget::A,
                 LoadByteSource::D8,
             ))),
-            
+
             0x0A => Some(Instruction::LD(LoadType::Byte(
                 LoadByteTarget::A,
                 LoadByteSource::BCV,
@@ -1453,7 +1452,6 @@ impl Instruction {
                 LoadByteTarget::A,
                 LoadByteSource::HLD,
             ))),
-
 
             0xE2 => Some(Instruction::LD(LoadType::Byte(
                 LoadByteTarget::OC,

@@ -1,8 +1,8 @@
 pub mod tile_pixel_value;
 
 // use crate::cpu::memory_map::*;
-use tile_pixel_value::TilePixelValue;
 use crate::useful_func::*;
+use tile_pixel_value::TilePixelValue;
 
 type Tile = [[TilePixelValue; 8]; 8];
 
@@ -22,14 +22,14 @@ pub struct GPU {
 // impl defa
 
 impl GPU {
-    pub fn new() -> GPU{
+    pub fn new() -> GPU {
         GPU {
-            tile_set : [empty_tile() ; 384],
-            _modeclock : 0,
-            _mode : 0,
-            _line : 0,
+            tile_set: [empty_tile(); 384],
+            _modeclock: 0,
+            _mode: 0,
+            _line: 0,
 
-            buffer : [0 ; 160 * 144],
+            buffer: [0; 160 * 144],
         }
     }
 

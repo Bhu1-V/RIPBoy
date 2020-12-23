@@ -11,6 +11,4 @@ fn main() {
     loop {
         emu.emulate();
     }
-
-
 }

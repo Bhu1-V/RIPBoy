@@ -26,7 +26,7 @@ fn main() {
 
     // let new_cpu_arc = Arc::clone(&a);
     loop {
-        emu.update();
+        emu.emulate();
         // thread::sleep(Duration::from_millis(2));
     }
 

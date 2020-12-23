@@ -6,10 +6,13 @@ mod cpu;
 mod gpu;
 mod useful_func;
 
-use std::{process::exit, time::{Duration, Instant}};
+use std::{cmp::Ordering, process::exit, time::{Duration, Instant}};
 
 use cpu::{CPU};
 use minifb::{self, Key,Menu, KeyRepeat, ScaleMode};
+
+const delta_interval:Duration = Duration::from_millis((1000.0/59.73) as u64);
+const MAX_CYCLES : u32 = 69905;
 
 pub struct Emulator{
     pub cpu : CPU,
@@ -18,7 +21,7 @@ pub struct Emulator{
     cycles : u128,
     times_renderes : u128,
     initalised_time : Instant,
-    started_time : Instant,
+    last_frame_time : Instant,
 }
 
 impl Emulator {
@@ -44,7 +47,7 @@ impl Emulator {
             times_renderes : 0,
             cycles : 0,
             initalised_time : Instant::now(),
-            started_time : std::time::Instant::now(),
+            last_frame_time : Instant::now(),
         }
     }
 
@@ -57,24 +60,11 @@ impl Emulator {
         self.cpu.init_game();
     }
 
-    pub fn update(&mut self) {
+    pub fn emulate(&mut self) {
 
-        const MAX_CYCLES : u32 = 69905;
-        let mut cycles_this_updates = 0;
+        let this_frame_time = Instant::now();
         
-        while cycles_this_updates < MAX_CYCLES {
-            if self.cpu.pc == 0xFE {
-                println!("Cycles = {}",self.cycles);
-            }
-            self.cpu.step();
-            self.cpu.do_interupts();
-            self.cpu.update_timers(self.cpu.m as u32);
-            self.cpu.update_graphics(self.cpu.m as i16);
-            self._r();
-            self.cycles = self.cycles.wrapping_add(self.cpu.m as u128);
-            cycles_this_updates += self.cpu.m as u32;
-        }
-
+        let diff = this_frame_time.duration_since(self.last_frame_time).as_millis();
 
         self.window.get_keys_pressed(KeyRepeat::Yes).map(|keys| {
             for t in keys {
@@ -112,14 +102,37 @@ impl Emulator {
             }
         });
 
+        let this_frame_time = Instant::now();
+
+        if self.last_frame_time.checked_add(delta_interval).unwrap().cmp(&this_frame_time) == Ordering::Less {
+            self.update();
+            self.last_frame_time = this_frame_time;
+        }
+
     }
 
-    pub fn _r(&mut self){
-        if self.started_time.elapsed() >= Duration::from_millis(18) {
-            self.render();
-            self.started_time = Instant::now();
+    fn update(&mut self) {
+        let mut cycles_this_updates = 0;
+
+        while cycles_this_updates <= MAX_CYCLES {
+            self.cpu.step();
+            self.cpu.do_interupts();
+            self.cpu.update_timers(self.cpu.m as u32);
+            if self.cpu.update_graphics(self.cpu.m as i16){
+                // self._r();
+                self.render();
+            }
+            self.cycles = self.cycles.wrapping_add(self.cpu.m as u128);
+            cycles_this_updates += self.cpu.m as u32;
         }
     }
+
+    // pub fn _r(&mut self){
+    //     if self.started_time.elapsed() >= Duration::from_millis(18) {
+    //         self.render();
+    //         self.started_time = Instant::now();
+    //     }
+    // }
 
     pub fn render(&mut self) {
         self.times_renderes += 1;

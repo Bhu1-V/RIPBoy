@@ -2409,34 +2409,4 @@ impl CPU {
         }
         false
     }
-
-    pub fn draw_current_line(&mut self) {
-        if test_bit(self.bus.read_byte(0xFF40), 7) == false {
-            return;
-        }
-
-        self.bus.memory[0xFF44] = self.bus.memory[0xFF44].wrapping_add(1);
-        self.bus.scan_line_counter = 456;
-
-        let scan_line = self.bus.read_byte(0xFF44);
-
-        if scan_line == 0x90 {
-            println!("check 9");
-            self.issue_v_blank();
-        }
-
-        if scan_line > 0x99 {
-            println!("check 10");
-            self.bus.memory[0xFF44] = 0;
-        }
-
-        if scan_line < 0x90 {
-            println!("check 11");
-            self._draw_scan_line()
-        }
-    }
-
-    pub fn issue_v_blank(&mut self) {
-        self._request_interupt(0);
-    }
 }

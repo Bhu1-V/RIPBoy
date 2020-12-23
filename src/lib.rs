@@ -6,27 +6,26 @@ mod cpu;
 mod gpu;
 mod useful_func;
 
-use std::{
-    cmp::Ordering,
-    process::exit,
-    time::{Duration, Instant},
-};
+use std::{cmp::Ordering, path::PathBuf, process::exit, time::{Duration, Instant}};
 
 use cpu::CPU;
 use minifb::{self, Key, KeyRepeat, Menu, ScaleMode};
+use wfd::{self, DialogParams};
 
 const DELTA_INTERVAL: Duration = Duration::from_millis((1000.0 / 59.73) as u64);
 const MAX_CYCLES: u32 = 69905;
 
 pub struct Emulator {
-    pub cpu: CPU,
-    window: minifb::Window,
-    once: bool,
+    cpu: CPU,
+    pub window: minifb::Window,
     cycles: u128,
+    game_rom_path : PathBuf,
     times_renderes: u128,
+    pub rom_available : bool,
     initalised_time: Instant,
     last_frame_time: Instant,
 }
+
 
 impl Emulator {
     pub fn new() -> Emulator {
@@ -41,21 +40,49 @@ impl Emulator {
         };
         let mut menu = Menu::new("File").unwrap();
         menu.add_item("Load ROM", 100).shortcut(Key::O, 200).build();
-        let mut window = minifb::Window::new("GB", 160, 144, win_opt).unwrap();
-        window.add_menu(&menu);
+        let mut window = minifb::Window::new("Press \"O\" to Load The GB ROM.", 160, 144, win_opt).unwrap();
+        window.limit_update_rate(Some(Duration::from_micros(16600)));
+        // let mut current_path = std::env::current_dir().unwrap();
+        // current_path.push("retroid.gb");
         Emulator {
             cpu: CPU::new(),
             window,
-            once: false,
             times_renderes: 0,
             cycles: 0,
+            game_rom_path : PathBuf::default(),
             initalised_time: Instant::now(),
             last_frame_time: Instant::now(),
+            rom_available : false,
+        }
+    }
+
+    pub fn open(&mut self) {
+        if self.window.is_open() {
+            self.window.get_keys_pressed(KeyRepeat::No).map(|keys| {
+                for t in keys {
+                    match t {
+                        Key::O => {
+                            self.get_game_rom();
+                        }
+                        
+                        _ => ()
+                    }
+                }
+            });
+            self.window.update();
+        } else {
+            println!(
+                "Rendered Total of {} in {:?}",
+                self.times_renderes,
+                self.initalised_time.elapsed()
+            );
+            exit(0);
         }
     }
 
     pub fn start(&mut self) {
-        match self.cpu.bus.load_catridge() {
+        println!("{:?}",self.game_rom_path);
+        match self.cpu.bus.load_catridge(&self.game_rom_path) {
             Ok(()) => self.cpu.init_game(),
             Err(error) => println!("{}", error),
         }
@@ -64,54 +91,58 @@ impl Emulator {
 
     pub fn emulate(&mut self) {
 
+        if self.game_rom_path == PathBuf::default() {
+            return;
+        }
+
+        self.window.get_keys_pressed(KeyRepeat::No).map(|keys| {
+            for t in keys {
+                match t {
+                    Key::O => {
+                        self.get_game_rom();
+
+                    }
+
+                    _ => ()
+                }
+            }
+        });
+
         self.window.get_keys_pressed(KeyRepeat::Yes).map(|keys| {
             for t in keys {
                 match t {
                     Key::A => {
-                        println!("key Pressed A");
                         self.cpu.get_key_pressed(4);
                     }
                     Key::S => {
-                        println!("key Pressed S");
+                        
                         self.cpu.get_key_pressed(5);
                     }
                     Key::Enter => {
-                        println!("key Pressed Enter");
+                        
                         self.cpu.get_key_pressed(7);
                     }
                     Key::Space => {
-                        println!("key Pressed Space");
+                        
                         self.cpu.get_key_pressed(6);
                     }
 
                     Key::Right => {
-                        println!("key Pressed Right");
+                        
                         self.cpu.get_key_pressed(0);
                     }
                     Key::Left => {
-                        println!("key Pressed Left");
+                        
                         self.cpu.get_key_pressed(1);
                     }
                     Key::Up => {
-                        println!("key Pressed Up");
+                        
                         self.cpu.get_key_pressed(2);
                     }
                     Key::Down => {
-                        println!("key Pressed Down");
+                        
                         self.cpu.get_key_pressed(3);
                     }
-                    Key::C => {
-                        println!("");
-                        self.cpu.get_key_pressed(3);
-                    }
-                    Key::I => println!(
-                        "CPU is Halted = {} PC = {:X} and OP code = {:X} {:X} {:X}",
-                        self.cpu.is_halted,
-                        self.cpu.pc,
-                        self.cpu.bus.read_byte(self.cpu.pc),
-                        self.cpu.bus.read_byte(self.cpu.pc + 1),
-                        self.cpu.bus.read_byte(self.cpu.pc)
-                    ),
                     _ => (),
                 }
             }
@@ -121,36 +152,36 @@ impl Emulator {
             for t in keys {
                 match t {
                     Key::A => {
-                        println!("key Realeased A");
+        
                         self.cpu.set_key_relased(4);
                     }
                     Key::S => {
-                        println!("key Realeased S");
+        
                         self.cpu.set_key_relased(5);
                     }
                     Key::Enter => {
-                        println!("key Realeased Enter");
+                        
                         self.cpu.set_key_relased(7);
                     }
                     Key::Space => {
-                        println!("key Realeased Space");
+                        
                         self.cpu.set_key_relased(6);
                     }
 
                     Key::Right => {
-                        println!("key Realeased Right");
+                        
                         self.cpu.set_key_relased(0);
                     }
                     Key::Left => {
-                        println!("key Realeased Left");
+                    
                         self.cpu.set_key_relased(1);
                     }
                     Key::Up => {
-                        println!("key Realeased Up");
+            
                         self.cpu.set_key_relased(2);
                     }
                     Key::Down => {
-                        println!("key Realeased Down");
+                    
                         self.cpu.set_key_relased(3);
                     }
                     _ => (),
@@ -188,6 +219,22 @@ impl Emulator {
         }
     }
 
+    fn get_game_rom(&mut self) {
+        let params = DialogParams {
+            default_extension : ".gb",
+            ok_button_label : "Emulate",
+            file_name_label : "GB ROM",
+            file_types : vec![("GameBoy ROMS (*.gb)", "*.gb;*.gbc")],
+            title : "LOAD GB ROM",
+            ..DialogParams::default()
+        };
+
+        let open_result = wfd::open_dialog(params).unwrap();
+        self.game_rom_path = open_result.selected_file_path;
+        self.window.set_title("RIP BOY");
+        self.rom_available = true;
+        self.start();
+    }
 
     pub fn render(&mut self) {
         self.times_renderes += 1;

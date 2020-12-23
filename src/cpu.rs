@@ -2226,7 +2226,7 @@ impl CPU {
         if self.bus.key_pressed(key) {
             self._request_interupt(4);
         }
-        self.update_graphics(self.m as i16);
+        // self.update_graphics(self.m as i16);
     }
 
     pub fn set_key_relased(&mut self, key: u8) {

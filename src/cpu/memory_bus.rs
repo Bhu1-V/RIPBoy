@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, path::PathBuf};
 use std::fs::File;
 use std::io;
 use std::io::prelude::*;
@@ -13,10 +13,10 @@ pub const RETRACE_START: u16 = 456;
 
 #[derive(PartialEq)]
 pub enum Color {
-    White,
-    LightGray,
-    DarkGray,
-    Black,
+    LightestGreen,
+    LightGreen,
+    DarkGreen,
+    DarkestGreen,
 }
 
 pub struct RGB {
@@ -219,7 +219,7 @@ impl MemoryBus {
         self._gameLoaded = false;
     }
 
-    pub fn load_catridge(&mut self) -> io::Result<()> {
+    pub fn load_catridge(&mut self,rom_path : &PathBuf) -> io::Result<()> {
         if self._gameLoaded {
             self.stop_game();
         }
@@ -229,7 +229,7 @@ impl MemoryBus {
         self.memory = [0; 0x10000];
         self._cartridge = vec![0; MAX_CATRIDGE_SIZE];
 
-        let mut file = File::open("game.gb")?;
+        let mut file = File::open(rom_path)?;
         println!("read file size = {:?}", file.read(&mut self._cartridge));
 
         (self.memory[0..0x8001]).copy_from_slice(&self._cartridge[0..0x8001]);
@@ -344,28 +344,17 @@ impl MemoryBus {
             let mut blue = 0;
 
             match col {
-                Color::White => {
-                    red = 255;
-                    green = 255;
-                    blue = 255;
+                Color::LightestGreen => {
+                    red = 155 ; green = 188 ; blue = 15;
                 }
-
-                Color::LightGray => {
-                    red = 0xCC;
-                    green = 0xCC;
-                    blue = 0xCC;
+                Color::LightGreen => {
+                    red = 139 ; green = 172 ; blue = 15;
                 }
-
-                Color::DarkGray => {
-                    red = 0x77;
-                    green = 0x77;
-                    blue = 0x77;
+                Color::DarkGreen => {
+                    red = 48 ; green = 98 ; blue = 48;
                 }
-
                 _ => {
-                    red = 0;
-                    green = 0;
-                    blue = 0;
+                    red = 15 ; green = 56 ; blue = 15;
                 }
             }
 
@@ -377,7 +366,7 @@ impl MemoryBus {
 
             // ADD RGB INTO SCREEN BUFFER
             let index: u16 = 160 * finaly + pixel as u16;
-            self.gpu.buffer[index as usize] = from_u8_rgb(red, blue, green);
+            self.gpu.buffer[index as usize] = from_u8_rgb(red,green,blue);
         }
     }
 
@@ -449,34 +438,25 @@ impl MemoryBus {
 
                     let col = self.get_color(color_num, color_address);
 
-                    if col == Color::White {
+                    if col == Color::LightestGreen {
                         continue;
                     }
-
                     let mut red: u8 = 0;
                     let mut green: u8 = 0;
                     let mut blue: u8 = 0;
 
                     match col {
-                        Color::White => {
-                            red = 255;
-                            green = 255;
-                            blue = 255;
+                        Color::LightestGreen => {
+                            red = 155 ; green = 188 ; blue = 15;
                         }
-                        Color::LightGray => {
-                            red = 0xCC;
-                            green = 0xCC;
-                            blue = 0xCC;
+                        Color::LightGreen => {
+                            red = 139 ; green = 172 ; blue = 15;
                         }
-                        Color::DarkGray => {
-                            red = 0x77;
-                            green = 0x77;
-                            blue = 0x77;
+                        Color::DarkGreen => {
+                            red = 48 ; green = 98 ; blue = 48;
                         }
                         _ => {
-                            red = 0;
-                            green = 0;
-                            blue = 0;
+                            red = 15 ; green = 56 ; blue = 15;
                         }
                     }
 
@@ -491,14 +471,14 @@ impl MemoryBus {
 
                     let index = 160 * scan_line as i32 + pixel;
 
-                    self.gpu.buffer[index as usize] = from_u8_rgb(red, blue, green);
+                    self.gpu.buffer[index as usize] = from_u8_rgb(red,green,blue);
                 }
             }
         }
     }
 
     pub fn get_color(&mut self, color_num: u8, address: u16) -> Color {
-        let mut res = Color::White;
+        let mut res = Color::LightestGreen;
         let palette = self.read_byte(address);
         let mut hi = 0;
         let mut lo = 0;
@@ -530,10 +510,10 @@ impl MemoryBus {
         color |= b;
 
         match color {
-            0 => res = Color::White,
-            1 => res = Color::LightGray,
-            2 => res = Color::DarkGray,
-            3 => res = Color::Black,
+            0 => res = Color::LightestGreen,
+            1 => res = Color::LightGreen,
+            2 => res = Color::DarkGreen,
+            3 => res = Color::DarkestGreen,
             _ => panic!("Unhandled color"),
         }
         res

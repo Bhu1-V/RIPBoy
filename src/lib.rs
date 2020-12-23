@@ -15,7 +15,7 @@ use std::{
 use cpu::CPU;
 use minifb::{self, Key, KeyRepeat, Menu, ScaleMode};
 
-const delta_interval: Duration = Duration::from_millis((1000.0 / 59.73) as u64);
+const DELTA_INTERVAL: Duration = Duration::from_millis((1000.0 / 59.73) as u64);
 const MAX_CYCLES: u32 = 69905;
 
 pub struct Emulator {
@@ -63,12 +63,7 @@ impl Emulator {
     }
 
     pub fn emulate(&mut self) {
-        let this_frame_time = Instant::now();
-
-        let diff = this_frame_time
-            .duration_since(self.last_frame_time)
-            .as_millis();
-
+        
         self.window.get_keys_pressed(KeyRepeat::Yes).map(|keys| {
             for t in keys {
                 match t {
@@ -167,7 +162,7 @@ impl Emulator {
 
         if self
             .last_frame_time
-            .checked_add(delta_interval)
+            .checked_add(DELTA_INTERVAL)
             .unwrap()
             .cmp(&this_frame_time)
             == Ordering::Less

@@ -11,3 +11,7 @@ Coding Along as I learn new stuff.
 - cargo run to start emulator.
 
 
+If Using WINDOWS SIMPLE DOWNLAOD THE RELEASE BUILD.
+
+https://github.com/Bhuvan-Vemula/RIPBoy/releases
+

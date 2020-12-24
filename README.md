@@ -1,17 +1,54 @@
-# RIP Boy [GameBoy Emulator In Rust].
+# RIP Boy
 
-This a Basic Game-Boy Emulator. 
+A GameBoy Emulator Written In Rust.
 
-Coding Along as I learn new stuff.
+## Installation
 
-- The Core Emulator Is Finished without SOUND and U can Play a Game if u have the game ROM.
+Download the Project. Run Below Command In Project DIrectory . Make Sure to Install [Rust](https://www.rust-lang.org/tools/install).
 
-- Download The Source Code [RUST is Required]. Put the Game u wanna play into main Directory of project with the name game.
+```shell
+cargo run
+```
 
-- cargo run to start emulator.
+## Downloads
+[RIP_BOY v0.03](https://github.com/Bhuvan-Vemula/RIPBoy/releases/tag/0.03)
 
+you also get an Free Game ROM to Test it.
+  
 
-If Using WINDOWS SIMPLE DOWNLAOD THE RELEASE BUILD.
+## Controls
+```bash
+O - Open/Load the ROM.
+ 
+A - Jump 
+S - Shoot
 
-https://github.com/Bhuvan-Vemula/RIPBoy/releases
+Space - Select
+Enter - Start
 
+#Direction Keys - Dpad
+
+Right Arrow - Right
+Left Arrow  - Left
+Up Arrow    - Up
+Down Arrow  - Down
+
+```
+
+## Features 
+- It can Play most Games That are Based on MBC1 and MBC2.
+- 60 FPS GamePlay Experience.
+- Green Pallete as Original Gameboy.
+
+    ![](https://media.giphy.com/media/ToYMjBmZlrafaGomD2/giphy.gif)
+
+## Upcoming Features
+
+- Sound.
+- Debugging.
+- More MBC's Support.
+- WebAssembly Support.
+
+## Credits 
+
+Jonas for His Free GAME ROM Retroid.

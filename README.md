@@ -11,6 +11,3 @@ Coding Along as I learn new stuff.
 - cargo run to start emulator.
 
 
-Credits :
-
-- mixtela for his bootCode for GameBoy.

@@ -4,7 +4,7 @@ A GameBoy Emulator Written In Rust.
 
 ## Installation
 
-Download the Project. Run Below Command In Project DIrectory . Make Sure to Install [Rust](https://www.rust-lang.org/tools/install).
+Download the Project. Run Below Command In Project Directory . Make Sure to Install [Rust](https://www.rust-lang.org/tools/install).
 
 ```shell
 cargo run
